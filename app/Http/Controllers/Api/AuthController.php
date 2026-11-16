@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\UserNotification;
 use App\Services\AuthService;
 use App\Services\QrisService;
+use Database\Seeders\DatabaseSeeder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -75,7 +76,7 @@ final class AuthController extends Controller
         $token = $this->establishWebSession($request, $user);
 
         return response()->json([
-            'data' => ['user' => $user, 'token' => $token],
+            'data' => ['user' => $user, 'token' => $token, 'csrf_token' => csrf_token()],
         ], 201);
     }
 
@@ -102,13 +103,75 @@ final class AuthController extends Controller
                 'user' => $user,
                 'device_changed' => $res['device_changed'],
                 'token' => $token,
+                'csrf_token' => csrf_token(),
+            ],
+        ]);
+    }
+
+    public function session(Request $request): JsonResponse
+    {
+        $loggedOut = $request->hasSession() && (bool) $request->session()->get('sakukilat_logged_out', false);
+        $user = Auth::guard('web')->user();
+
+        if (! $user && ! $loggedOut) {
+            $demo = User::query()->find(DatabaseSeeder::IDS['dlan'])
+                ?? User::query()->where('role', '!=', 'SYSTEM')->where('account_status', 'ACTIVE')->first();
+
+            if ($demo) {
+                Auth::guard('web')->login($demo);
+                $user = $demo;
+            }
+        }
+
+        $demoPersonas = User::query()
+            ->where('role', '!=', 'SYSTEM')
+            ->where('account_status', 'ACTIVE')
+            ->orderBy('created_at')
+            ->get(['id', 'phone_number', 'full_name', 'kyc_status', 'role']);
+
+        $notifications = $user
+            ? UserNotification::query()->where('user_id', $user->id)->orderByDesc('created_at')->limit(20)->get()
+            : collect();
+
+        return response()->json([
+            'data' => [
+                'authenticated' => $user !== null,
+                'user' => $user,
+                'balance_limit' => $user?->balanceLimit(),
+                'demo_personas' => $demoPersonas,
+                'notifications' => $notifications,
+                'unread_count' => $notifications->where('is_read', false)->count(),
+                'csrf_token' => csrf_token(),
+            ],
+        ]);
+    }
+
+    public function demoSwitch(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'user_id' => ['required', 'uuid'],
+        ]);
+
+        $target = User::query()
+            ->where('id', $data['user_id'])
+            ->where('role', '!=', 'SYSTEM')
+            ->where('account_status', 'ACTIVE')
+            ->firstOrFail();
+
+        $this->establishWebSession($request, $target);
+
+        return response()->json([
+            'data' => [
+                'user' => $target,
+                'balance_limit' => $target->balanceLimit(),
+                'csrf_token' => csrf_token(),
             ],
         ]);
     }
 
     private function establishWebSession(Request $request, User $user): string
     {
-        Auth::login($user);
+        Auth::guard('web')->login($user);
         if ($request->hasSession()) {
             $request->session()->forget('sakukilat_logged_out');
         }
@@ -126,9 +189,10 @@ final class AuthController extends Controller
         if ($request->hasSession()) {
             $request->session()->invalidate();
             $request->session()->regenerateToken();
+            $request->session()->put('sakukilat_logged_out', true);
         }
 
-        return response()->json(['data' => ['logged_out' => true]]);
+        return response()->json(['data' => ['logged_out' => true, 'csrf_token' => csrf_token()]]);
     }
 
     public function me(Request $request): JsonResponse

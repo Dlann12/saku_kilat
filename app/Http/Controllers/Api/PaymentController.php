@@ -10,15 +10,60 @@ use App\Models\Transaction;
 use App\Models\User;
 use App\Services\IdempotencyService;
 use App\Services\PaymentService;
+use App\Services\QrisService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response as HttpResponse;
 
 final class PaymentController extends Controller
 {
     public function __construct(
         private readonly PaymentService $payments,
         private readonly IdempotencyService $idempotency,
+        private readonly QrisService $qris,
     ) {}
+
+    public function qrisPresets(): JsonResponse
+    {
+        return response()->json([
+            'data' => [
+                'presets' => [
+                    [
+                        'id' => 'kenangan',
+                        'label' => 'Kopi Kenangan Bengkulu (Statis)',
+                        'badge' => 'QRIS Statis',
+                        'payload' => $this->qris->buildQrisPayload('ID1026177100022', 'Kopi Kenangan Bengkulu', 'Kota Bengkulu', null, false),
+                    ],
+                    [
+                        'id' => 'warung-budi',
+                        'label' => 'Warung Kopi Pak Budi (Dinamis Rp 38.000)',
+                        'badge' => 'Rp 38.000',
+                        'payload' => $this->qris->buildQrisPayload('ID1026177100011', 'Warung Kopi Pak Budi', 'Kota Bengkulu', 38_000, true),
+                    ],
+                    [
+                        'id' => 'tj',
+                        'label' => 'TransJakarta Harmoni (Dinamis Rp 3.500)',
+                        'badge' => 'Rp 3.500',
+                        'payload' => $this->qris->buildQrisPayload('ID1026317100033', 'TransJakarta Harmoni', 'Jakarta Pusat', 3_500, true),
+                    ],
+                ],
+            ],
+        ]);
+    }
+
+    public function transferContacts(Request $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        $contacts = User::query()
+            ->where('role', '!=', 'SYSTEM')
+            ->where('id', '!=', $user->id)
+            ->orderBy('created_at')
+            ->limit(4)
+            ->get(['full_name', 'phone_number']);
+
+        return response()->json(['data' => ['contacts' => $contacts]]);
+    }
 
     public function qrisDecode(Request $request): JsonResponse
     {
@@ -218,5 +263,39 @@ final class PaymentController extends Controller
         $user = $request->user();
 
         return response()->json(['data' => $this->payments->getAnalyticsSummary($user)]);
+    }
+
+    public function exportCsv(Request $request): HttpResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        $rows = $this->payments->listTransactions($user, [
+            'direction' => (string) $request->query('direction', 'ALL'),
+            'type' => (string) $request->query('type', 'ALL'),
+            'q' => (string) $request->query('q', ''),
+            'limit' => 100,
+        ]);
+
+        $lines = ['Referensi,Waktu,Judul,Kategori,Jenis,Status,Arah,Nominal,Admin,Total'];
+        foreach ($rows as $r) {
+            $title = str_replace('"', '""', $r['title']);
+            $lines[] = implode(',', [
+                $r['reference_number'],
+                $r['created_at'],
+                "\"{$title}\"",
+                "\"{$r['category']}\"",
+                $r['transaction_type'],
+                $r['status'],
+                $r['direction'],
+                $r['amount'],
+                $r['admin_fee'],
+                $r['total_amount'],
+            ]);
+        }
+
+        return response(implode("\n", $lines), 200, [
+            'Content-Type' => 'text/csv; charset=utf-8',
+            'Content-Disposition' => 'attachment; filename="mutasi-sakukilat-'.now()->format('Y-m-d').'.csv"',
+        ]);
     }
 }

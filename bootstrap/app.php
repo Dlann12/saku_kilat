@@ -3,8 +3,6 @@
 declare(strict_types=1);
 
 use App\Exceptions\DomainException;
-use App\Http\Middleware\AutoBootstrapDemoSession;
-use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -20,11 +18,6 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
-        $middleware->redirectGuestsTo('/auth');
-        $middleware->prependToPriorityList(
-            AuthenticatesRequests::class,
-            AutoBootstrapDemoSession::class,
-        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

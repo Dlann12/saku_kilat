@@ -33,12 +33,15 @@ Route::prefix('v1')->group(function (): void {
     });
 
     // Public Auth & Bank Webhook
+    Route::get('/auth/session', [AuthController::class, 'session']);
+    Route::post('/auth/demo-switch', [AuthController::class, 'demoSwitch']);
     Route::post('/auth/otp/request', [AuthController::class, 'otpRequest']);
     Route::post('/auth/otp/verify', [AuthController::class, 'otpVerify']);
     Route::post('/auth/register', [AuthController::class, 'register']);
     Route::post('/auth/login', [AuthController::class, 'login']);
     Route::post('/webhooks/va', [WalletController::class, 'vaWebhook']);
     Route::get('/ppob/catalog', [PaymentController::class, 'ppobCatalog']);
+    Route::get('/payments/qris/presets', [PaymentController::class, 'qrisPresets']);
 
     // Authenticated API (Sanctum Bearer Token OR Web Session Cookie)
     Route::middleware('auth:sanctum')->group(function (): void {
@@ -62,6 +65,7 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/payments/qris/decode', [PaymentController::class, 'qrisDecode']);
         Route::post('/payments/qris/execute', [PaymentController::class, 'qrisExecute']);
 
+        Route::get('/transfers/contacts', [PaymentController::class, 'transferContacts']);
         Route::get('/transfers/lookup', [PaymentController::class, 'transferLookup']);
         Route::post('/transfers/p2p', [PaymentController::class, 'p2pTransfer']);
         Route::post('/transfers/bank', [PaymentController::class, 'bankTransfer']);
@@ -74,6 +78,7 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/split-bills/{id}/pay', [SplitBillController::class, 'pay']);
 
         Route::get('/transactions', [PaymentController::class, 'transactions']);
+        Route::get('/transactions/export.csv', [PaymentController::class, 'exportCsv']);
         Route::get('/transactions/{id}', [PaymentController::class, 'transactionDetail']);
         Route::get('/analytics/summary', [PaymentController::class, 'analyticsSummary']);
 

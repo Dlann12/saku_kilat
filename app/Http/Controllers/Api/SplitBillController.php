@@ -23,7 +23,18 @@ final class SplitBillController extends Controller
         /** @var User $user */
         $user = $request->user();
 
-        return response()->json(['data' => ['bills' => $this->splitBills->listForUser($user)]]);
+        $peers = User::query()
+            ->where('role', '!=', 'SYSTEM')
+            ->where('id', '!=', $user->id)
+            ->orderBy('created_at')
+            ->get(['id', 'full_name', 'phone_number']);
+
+        return response()->json([
+            'data' => [
+                'bills' => $this->splitBills->listForUser($user),
+                'peers' => $peers,
+            ],
+        ]);
     }
 
     public function store(Request $request): JsonResponse
