@@ -1,0 +1,13 @@
+node_modules/
+.next/
+out/
+dist/
+.env.local
+.env*.local
+*.tsbuildinfo
+next-env.d.ts
+.taste-skill/
+playwright-report/
+test-results/
+/tmp/
+
