@@ -12,7 +12,8 @@ const mode = shallowRef<'login' | 'register'>('login');
 const errorMsg = shallowRef('');
 const infoMsg = shallowRef('');
 const serverConfigOpen = shallowRef(isCapacitorRuntime());
-const apiServerInput = shallowRef(getApiBaseUrl());
+const savedServerUrl = shallowRef(getApiBaseUrl());
+const apiServerInput = shallowRef(savedServerUrl.value);
 const countdown = shallowRef(0);
 let timerId: ReturnType<typeof setInterval> | null = null;
 
@@ -20,6 +21,7 @@ async function saveAndTestServerUrl(): Promise<void> {
   errorMsg.value = '';
   infoMsg.value = '';
   const saved = setApiBaseUrl(apiServerInput.value);
+  savedServerUrl.value = saved;
   apiServerInput.value = saved;
   try {
     await apiFetch('/api/v1/health');
@@ -64,6 +66,9 @@ async function handleLogin(): Promise<void> {
         device_id: loginForm.deviceId.trim() || 'WEB-BROWSER-PRIMARY',
       },
     });
+    if (!res?.user) {
+      throw new Error('Server API belum merespons data pengguna. Pastikan URL Server API mengarah ke Laravel.');
+    }
     await store.fetchSession();
     await router.push(res.user.role === 'ADMIN' ? '/admin' : '/');
   } catch (err) {
@@ -196,8 +201,14 @@ async function useDemoPersona(userId: string, role: string): Promise<void> {
             </p>
           </div>
           <span class="sk-pill sk-pill-neutral font-mono-id">
-            {{ getApiBaseUrl() || 'Origin Web Default' }}
+            {{ savedServerUrl || 'Belum Diatur' }}
           </span>
+        </div>
+        <div
+          v-if="isCapacitorRuntime() && !savedServerUrl"
+          class="p-3 rounded-[10px] bg-[var(--pill-warning-bg)] text-[var(--pill-warning-ink)] text-xs font-medium"
+        >
+          Langkah 1 di HP: masukkan URL Laravel laptop (mis. http://192.168.1.39:8000) lalu tekan Simpan &amp; Cek Koneksi sebelum login.
         </div>
         <form class="flex flex-col sm:flex-row gap-2.5" @submit.prevent="saveAndTestServerUrl">
           <input

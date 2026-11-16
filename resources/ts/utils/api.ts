@@ -132,6 +132,18 @@ export async function apiFetch<T>(url: string, options: ApiRequestOptions = {}):
     throw err;
   }
 
+  const contentType = res.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    const err = new Error(
+      crossOrigin || nativeClient
+        ? `Server API belum terhubung ke Laravel (respons bukan JSON dari ${getApiBaseUrl() || 'Origin Web Default'}). Isi URL seperti http://192.168.1.39:8000 lalu klik Simpan & Cek Koneksi.`
+        : `Respons server bukan JSON (${res.status}).`
+    ) as ApiError;
+    err.code = 'NON_JSON_RESPONSE';
+    err.status = res.status;
+    throw err;
+  }
+
   const json = (await res.json().catch(() => ({}))) as {
     data?: T;
     error?: { code?: string; message?: string };
@@ -143,6 +155,13 @@ export async function apiFetch<T>(url: string, options: ApiRequestOptions = {}):
     }
     const err = new Error(json.error?.message || `Permintaan gagal (${res.status})`) as ApiError;
     err.code = json.error?.code || 'API_ERROR';
+    err.status = res.status;
+    throw err;
+  }
+
+  if (!json || typeof json !== 'object' || !('data' in json)) {
+    const err = new Error('Format respons server tidak dikenali.') as ApiError;
+    err.code = 'INVALID_API_PAYLOAD';
     err.status = res.status;
     throw err;
   }

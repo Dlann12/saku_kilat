@@ -1,4 +1,6 @@
 @import 'tailwindcss';
+@source '../ts';
+@source '../capacitor';
 
 :root {
   --ground: #faf8ff;
@@ -73,6 +75,8 @@ html {
 
 body {
   margin: 0;
+  padding-top: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
   background: var(--ground);
   color: var(--text);
   font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
