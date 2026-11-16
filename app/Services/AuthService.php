@@ -214,6 +214,33 @@ final class AuthService
             throw new DomainException('INVALID_CREDENTIALS', 'Nomor HP atau PIN tidak sesuai.', 401);
         }
 
+        return $this->verifyPinAndBindDevice($user, $pin, $deviceId);
+    }
+
+    public function loginAdminWithPin(string $identifier, string $pin, ?string $deviceId = null): array
+    {
+        $clean = trim($identifier);
+        $user = str_contains($clean, '@')
+            ? User::query()->whereRaw('LOWER(email) = ?', [strtolower($clean)])->first()
+            : User::query()->where('phone_number', $this->security->normalizePhone($clean))->first();
+
+        if (! $user || $user->account_status !== 'ACTIVE') {
+            throw new DomainException('INVALID_CREDENTIALS', 'Kredensial admin atau PIN tidak sesuai.', 401);
+        }
+
+        if ($user->role !== 'ADMIN') {
+            throw new DomainException(
+                'ADMIN_ACCESS_REQUIRED',
+                'Akun ini bukan administrator kepatuhan. Silakan gunakan halaman login pengguna.',
+                403
+            );
+        }
+
+        return $this->verifyPinAndBindDevice($user, $pin, $deviceId);
+    }
+
+    private function verifyPinAndBindDevice(User $user, string $pin, ?string $deviceId = null): array
+    {
         if ($user->pin_locked_until && $user->pin_locked_until->isFuture()) {
             $minutes = max(1, (int) ceil($user->pin_locked_until->diffInSeconds(now()) / 60));
 

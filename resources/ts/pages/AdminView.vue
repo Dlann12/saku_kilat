@@ -68,11 +68,14 @@ async function reverseTx(txId: string): Promise<void> {
       class="mb-5 p-4 rounded-[14px] border border-[#f5d08a] bg-[var(--pill-warning-bg)] text-[var(--pill-warning-ink)] flex flex-wrap items-center justify-between gap-3"
     >
       <div class="text-sm">
-        Anda sedang dalam mode baca. Beralihlah ke akun <strong>{{ adminPersona.full_name }}</strong> untuk menyetujui KYC atau mengeksekusi Auto-Reversal.
+        Anda sedang dalam mode baca. Masuk lewat Portal Admin untuk menyetujui KYC atau mengeksekusi Auto-Reversal.
       </div>
-      <button type="button" class="sk-btn min-h-[34px] text-xs" @click="store.switchDemoPersona(adminPersona.id)">
-        Masuk sebagai {{ adminPersona.full_name }}
-      </button>
+      <div class="flex flex-wrap gap-2">
+        <RouterLink to="/admin/login" class="sk-btn min-h-[34px] text-xs">Buka Login Admin</RouterLink>
+        <button type="button" class="sk-btn min-h-[34px] text-xs" @click="store.switchDemoPersona(adminPersona.id)">
+          Masuk Cepat sebagai {{ adminPersona.full_name }}
+        </button>
+      </div>
     </div>
 
     <div v-if="overview" class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">

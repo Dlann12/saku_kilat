@@ -48,8 +48,9 @@ async function toggleBiometric(): Promise<void> {
 }
 
 async function handleLogout(): Promise<void> {
+  const wasAdmin = store.user?.role === 'ADMIN';
   await store.logout();
-  await router.push('/auth');
+  await router.push(wasAdmin ? '/admin/login' : '/login');
 }
 
 async function submitKyc(): Promise<void> {
@@ -140,8 +141,9 @@ async function submitKyc(): Promise<void> {
         </div>
 
         <div class="pt-3 border-t border-[var(--rule)] flex flex-wrap gap-2.5">
-          <RouterLink to="/auth" class="sk-btn flex-1">Halaman Login / OTP</RouterLink>
-          <button type="button" class="flex-1 sk-btn text-[var(--negative)]" @click="handleLogout">
+          <RouterLink to="/login" class="sk-btn flex-1">Login Pengguna</RouterLink>
+          <RouterLink to="/admin/login" class="sk-btn flex-1">Login Admin</RouterLink>
+          <button type="button" class="w-full sk-btn text-[var(--negative)]" @click="handleLogout">
             Keluar Sesi
           </button>
         </div>

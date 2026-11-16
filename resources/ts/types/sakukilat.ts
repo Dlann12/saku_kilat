@@ -13,6 +13,7 @@ export interface UserProfile {
 export interface DemoPersona {
   id: string;
   phone_number: string;
+  email?: string | null;
   full_name: string;
   kyc_status: 'UNVERIFIED' | 'PENDING' | 'VERIFIED' | 'REJECTED';
   role: string;

@@ -23,6 +23,8 @@ final class WebPagesTest extends TestCase
     {
         $routes = [
             '/',
+            '/login',
+            '/admin/login',
             '/auth',
             '/topup',
             '/pockets',
@@ -86,11 +88,40 @@ final class WebPagesTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.authenticated', false);
 
-        // API login clears logout flag and restores session
+        // API user portal rejects non-user ADMIN login
+        $this->withHeaders($stateful)
+            ->postJson('/api/v1/auth/login', [
+                'phone_number' => '+6281100009999',
+                'pin' => '123456',
+                'portal' => 'USER',
+            ])
+            ->assertStatus(403);
+
+        // API admin login rejects normal consumer user
+        $this->withHeaders($stateful)
+            ->postJson('/api/v1/auth/admin/login', [
+                'identifier' => '+6285211223344',
+                'pin' => '123456',
+            ])
+            ->assertStatus(403);
+
+        // API admin login succeeds with Compliance Admin email + PIN
+        $this->withHeaders($stateful)
+            ->postJson('/api/v1/auth/admin/login', [
+                'identifier' => 'compliance@sakukilat.id',
+                'pin' => '123456',
+                'device_id' => 'AUDIT-STATION-01',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.user.role', 'ADMIN')
+            ->assertJsonPath('data.user.email', 'compliance@sakukilat.id');
+
+        // API user login restores regular user session cleanly
         $this->withHeaders($stateful)
             ->postJson('/api/v1/auth/login', [
                 'phone_number' => '+6285211223344',
                 'pin' => '123456',
+                'portal' => 'USER',
             ])
             ->assertOk()
             ->assertJsonPath('data.user.phone_number', '+6285211223344');

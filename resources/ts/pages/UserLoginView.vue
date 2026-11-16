@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onUnmounted, reactive, shallowRef } from 'vue';
+import { computed, onUnmounted, reactive, shallowRef } from 'vue';
 import { useRouter } from 'vue-router';
 import { useSessionStore } from '@/stores/session';
 import { apiFetch } from '@/utils/api';
@@ -12,6 +12,8 @@ const errorMsg = shallowRef('');
 const infoMsg = shallowRef('');
 const countdown = shallowRef(0);
 let timerId: ReturnType<typeof setInterval> | null = null;
+
+const userPersonas = computed(() => store.demoPersonas.filter((p) => p.role !== 'ADMIN'));
 
 const loginForm = reactive({
   phone: '+6285211223344',
@@ -43,6 +45,7 @@ async function handleLogin(): Promise<void> {
         phone_number: loginForm.phone.trim(),
         pin: loginForm.pin.trim(),
         device_id: loginForm.deviceId.trim() || 'WEB-BROWSER-PRIMARY',
+        portal: 'USER',
       },
     });
     await store.fetchSession();
@@ -143,11 +146,14 @@ async function useDemoPersona(userId: string): Promise<void> {
             />
           </svg>
           <div>
-            <h1 class="text-xl font-semibold tracking-tight leading-tight">SakuKilat</h1>
-            <p class="text-xs text-[var(--muted)]">Transaksi Cepat, Kelola Uang Tanpa Ribet</p>
+            <h1 class="text-xl font-semibold tracking-tight leading-tight">Masuk Pengguna SakuKilat</h1>
+            <p class="text-xs text-[var(--muted)]">Portal Dompet Digital Konsumen &amp; Merchant UMKM</p>
           </div>
         </div>
-        <RouterLink to="/" class="sk-btn">Kembali ke Beranda</RouterLink>
+        <div class="flex items-center gap-2">
+          <RouterLink to="/admin/login" class="sk-btn">Login Admin</RouterLink>
+          <RouterLink v-if="store.user" to="/" class="sk-btn">Beranda</RouterLink>
+        </div>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
@@ -155,7 +161,7 @@ async function useDemoPersona(userId: string): Promise<void> {
           <div class="flex gap-2 p-1 rounded-[12px] bg-[var(--ground)] border border-[var(--border)] mb-5">
             <button
               type="button"
-              class="flex-1 h-9 rounded-[9px] text-sm font-medium"
+              class="flex-1 min-h-[38px] px-2 py-1.5 rounded-[9px] text-sm font-medium whitespace-nowrap"
               :class="
                 mode === 'login'
                   ? 'bg-[var(--surface)] text-[var(--text)] border border-[var(--border)]'
@@ -167,7 +173,7 @@ async function useDemoPersona(userId: string): Promise<void> {
             </button>
             <button
               type="button"
-              class="flex-1 h-9 rounded-[9px] text-sm font-medium"
+              class="flex-1 min-h-[38px] px-2 py-1.5 rounded-[9px] text-sm font-medium whitespace-nowrap"
               :class="
                 mode === 'register'
                   ? 'bg-[var(--surface)] text-[var(--text)] border border-[var(--border)]'
@@ -175,7 +181,7 @@ async function useDemoPersona(userId: string): Promise<void> {
               "
               @click="mode = 'register'"
             >
-              Daftar Akun Baru (OTP)
+              Daftar (OTP)
             </button>
           </div>
 
@@ -213,7 +219,7 @@ async function useDemoPersona(userId: string): Promise<void> {
                 class="sk-input num tracking-[0.25em]"
               />
               <p class="mt-1 text-xs text-[var(--faint)]">
-                PIN bawaan semua akun demo adalah <span class="font-mono-id">123456</span>
+                PIN bawaan akun demo adalah <span class="font-mono-id">123456</span>
               </p>
             </div>
             <div>
@@ -222,7 +228,7 @@ async function useDemoPersona(userId: string): Promise<void> {
               </label>
               <input id="login-device" v-model="loginForm.deviceId" type="text" class="sk-input font-mono-id text-xs" />
             </div>
-            <button type="submit" class="w-full sk-btn sk-btn-primary">Masuk ke SakuKilat</button>
+            <button type="submit" class="w-full sk-btn sk-btn-primary">Masuk ke Dompet Pengguna</button>
           </form>
 
           <div v-else class="space-y-5">
@@ -306,14 +312,14 @@ async function useDemoPersona(userId: string): Promise<void> {
         </section>
 
         <aside class="sk-card lg:col-span-5">
-          <h2 class="text-[16px] font-semibold">Akun Simulasi Cepat (Demo Persona)</h2>
+          <h2 class="text-[16px] font-semibold">Akun Pengguna &amp; Merchant Demo</h2>
           <p class="text-xs text-[var(--muted)] mt-1">
-            Pilih salah satu akun terisi saldo &amp; riwayat untuk menguji peran pengguna, merchant UMKM, maupun admin kepatuhan.
+            Pilih akun konsumen atau pemilik UMKM untuk langsung mencoba transaksi.
           </p>
 
           <div class="mt-4 space-y-2.5">
             <div
-              v-for="p in store.demoPersonas"
+              v-for="p in userPersonas"
               :key="p.id"
               class="p-3 rounded-[12px] border border-[var(--border)] bg-[var(--ground)] flex items-center justify-between gap-3"
             >
@@ -322,12 +328,12 @@ async function useDemoPersona(userId: string): Promise<void> {
                 <div class="flex items-center gap-2 mt-0.5">
                   <span class="font-mono-id text-xs text-[var(--muted)]">{{ p.phone_number }}</span>
                   <span class="sk-pill" :class="p.kyc_status === 'VERIFIED' ? 'sk-pill-pos' : 'sk-pill-warn'">
-                    {{ p.kyc_status === 'VERIFIED' ? 'KYC Verified' : 'Basic' }}
+                    {{ p.role === 'MERCHANT' ? 'Merchant' : p.kyc_status === 'VERIFIED' ? 'Plus' : 'Basic' }}
                   </span>
                 </div>
               </div>
               <button type="button" class="sk-btn shrink-0 text-xs px-3 min-h-[34px]" @click="useDemoPersona(p.id)">
-                Pakai Akun
+                Masuk
               </button>
             </div>
           </div>
@@ -336,3 +342,4 @@ async function useDemoPersona(userId: string): Promise<void> {
     </div>
   </div>
 </template>
+

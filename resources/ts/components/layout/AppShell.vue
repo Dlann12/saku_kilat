@@ -29,7 +29,8 @@ const drawerLinks = [
   ...navSecondary,
   { to: '/topup', name: 'topup', label: 'Top Up Saldo', icon: 'plus' },
   { to: '/profil', name: 'profil', label: 'Profil & KYC', icon: 'user' },
-  { to: '/auth', name: 'auth', label: 'Daftar / Login OTP', icon: 'login' },
+  { to: '/login', name: 'login', label: 'Login Pengguna', icon: 'login' },
+  { to: '/admin/login', name: 'admin-login', label: 'Login Admin', icon: 'shield' },
 ];
 
 const pageTitle = computed(() => (route.meta.title as string) || 'SakuKilat');
@@ -148,11 +149,19 @@ async function onPersonaChange(e: Event): Promise<void> {
         </RouterLink>
 
         <RouterLink
-          to="/auth"
+          to="/login"
           class="flex items-center gap-2.5 h-9 px-2.5 rounded-[8px] text-[14px] text-[var(--muted)] hover:bg-[var(--surface)] hover:text-[var(--text)]"
         >
           <AppIcon name="login" />
-          <span>Daftar / Login OTP</span>
+          <span>Login Pengguna</span>
+        </RouterLink>
+
+        <RouterLink
+          to="/admin/login"
+          class="flex items-center gap-2.5 h-9 px-2.5 rounded-[8px] text-[14px] text-[var(--muted)] hover:bg-[var(--surface)] hover:text-[var(--text)]"
+        >
+          <AppIcon name="shield" />
+          <span>Login Admin</span>
         </RouterLink>
       </div>
     </aside>

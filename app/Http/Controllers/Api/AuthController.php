@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
+use App\Exceptions\DomainException;
 use App\Http\Controllers\Controller;
 use App\Models\KycDocument;
 use App\Models\User;
@@ -86,10 +87,47 @@ final class AuthController extends Controller
             'phone_number' => ['required', 'string', 'min:9', 'max:20'],
             'pin' => ['required', 'regex:/^\d{6}$/'],
             'device_id' => ['nullable', 'string', 'max:120'],
+            'portal' => ['sometimes', 'in:USER,ADMIN'],
         ]);
 
         $res = $this->auth->loginWithPin(
             $data['phone_number'],
+            $data['pin'],
+            $data['device_id'] ?? $request->header('X-Device-Id')
+        );
+
+        /** @var User $user */
+        $user = $res['user'];
+        if (($data['portal'] ?? null) === 'USER' && $user->role === 'ADMIN') {
+            throw new DomainException(
+                'PORTAL_MISMATCH',
+                'Akun Compliance Admin harus masuk melalui halaman Login Admin (/admin/login).',
+                403
+            );
+        }
+
+        $token = $this->establishWebSession($request, $user);
+
+        return response()->json([
+            'data' => [
+                'user' => $user,
+                'device_changed' => $res['device_changed'],
+                'token' => $token,
+                'csrf_token' => csrf_token(),
+            ],
+        ]);
+    }
+
+    public function adminLogin(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'identifier' => ['required', 'string', 'min:4', 'max:160'],
+            'pin' => ['required', 'regex:/^\d{6}$/'],
+            'device_id' => ['nullable', 'string', 'max:120'],
+        ]);
+
+        $res = $this->auth->loginAdminWithPin(
+            $data['identifier'],
             $data['pin'],
             $data['device_id'] ?? $request->header('X-Device-Id')
         );
@@ -127,7 +165,7 @@ final class AuthController extends Controller
             ->where('role', '!=', 'SYSTEM')
             ->where('account_status', 'ACTIVE')
             ->orderBy('created_at')
-            ->get(['id', 'phone_number', 'full_name', 'kyc_status', 'role']);
+            ->get(['id', 'phone_number', 'email', 'full_name', 'kyc_status', 'role']);
 
         $notifications = $user
             ? UserNotification::query()->where('user_id', $user->id)->orderByDesc('created_at')->limit(20)->get()
