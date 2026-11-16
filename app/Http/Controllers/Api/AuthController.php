@@ -114,14 +114,16 @@ final class AuthController extends Controller
     public function session(Request $request): JsonResponse
     {
         $loggedOut = $request->hasSession() && (bool) $request->session()->get('sakukilat_logged_out', false);
-        $user = Auth::guard('web')->user();
+        $user = Auth::guard('sanctum')->user() ?? Auth::guard('web')->user();
 
-        if (! $user && ! $loggedOut) {
+        if (! $user && ! $loggedOut && ! $request->bearerToken() && ! $request->header('X-Saku-Mobile')) {
             $demo = User::query()->find(DatabaseSeeder::IDS['dlan'])
                 ?? User::query()->where('role', '!=', 'SYSTEM')->where('account_status', 'ACTIVE')->first();
 
             if ($demo) {
-                Auth::guard('web')->login($demo);
+                if ($request->hasSession()) {
+                    Auth::guard('web')->login($demo);
+                }
                 $user = $demo;
             }
         }
@@ -162,12 +164,13 @@ final class AuthController extends Controller
             ->where('account_status', 'ACTIVE')
             ->firstOrFail();
 
-        $this->establishWebSession($request, $target);
+        $token = $this->establishWebSession($request, $target);
 
         return response()->json([
             'data' => [
                 'user' => $target,
                 'balance_limit' => $target->balanceLimit(),
+                'token' => $token,
                 'csrf_token' => csrf_token(),
             ],
         ]);
@@ -175,10 +178,10 @@ final class AuthController extends Controller
 
     private function establishWebSession(Request $request, User $user): string
     {
-        Auth::guard('web')->login($user);
-        Auth::guard('sanctum')->forgetUser();
-        Auth::forgetGuards();
         if ($request->hasSession()) {
+            Auth::guard('web')->login($user);
+            Auth::guard('sanctum')->forgetUser();
+            Auth::forgetGuards();
             $request->session()->forget('sakukilat_logged_out');
         }
 
@@ -191,10 +194,10 @@ final class AuthController extends Controller
         if ($user && $user->currentAccessToken() instanceof PersonalAccessToken) {
             $user->currentAccessToken()->delete();
         }
-        Auth::guard('web')->logout();
-        Auth::guard('sanctum')->forgetUser();
-        Auth::forgetGuards();
         if ($request->hasSession()) {
+            Auth::guard('web')->logout();
+            Auth::guard('sanctum')->forgetUser();
+            Auth::forgetGuards();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
             $request->session()->put('sakukilat_logged_out', true);

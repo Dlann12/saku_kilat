@@ -3,7 +3,7 @@ import { onUnmounted, reactive, shallowRef } from 'vue';
 import { useRouter } from 'vue-router';
 import { useSessionStore } from '@/stores/session';
 import type { UserProfile } from '@/types/sakukilat';
-import { apiFetch } from '@/utils/api';
+import { apiFetch, getApiBaseUrl, isCapacitorRuntime, setApiBaseUrl } from '@/utils/api';
 
 const router = useRouter();
 const store = useSessionStore();
@@ -11,8 +11,26 @@ const store = useSessionStore();
 const mode = shallowRef<'login' | 'register'>('login');
 const errorMsg = shallowRef('');
 const infoMsg = shallowRef('');
+const serverConfigOpen = shallowRef(isCapacitorRuntime());
+const apiServerInput = shallowRef(getApiBaseUrl());
 const countdown = shallowRef(0);
 let timerId: ReturnType<typeof setInterval> | null = null;
+
+async function saveAndTestServerUrl(): Promise<void> {
+  errorMsg.value = '';
+  infoMsg.value = '';
+  const saved = setApiBaseUrl(apiServerInput.value);
+  apiServerInput.value = saved;
+  try {
+    await apiFetch('/api/v1/health');
+    await store.fetchSession();
+    infoMsg.value = saved
+      ? `Terhubung ke server API: ${saved}`
+      : 'Terhubung ke server lokal bawaan.';
+  } catch (err) {
+    errorMsg.value = err instanceof Error ? err.message : 'Gagal terhubung ke server API.';
+  }
+}
 
 const loginForm = reactive({
   identifier: '+6285211223344',
@@ -153,8 +171,46 @@ async function useDemoPersona(userId: string, role: string): Promise<void> {
             </p>
           </div>
         </div>
-        <RouterLink v-if="store.user" to="/" class="sk-btn">Kembali ke Beranda</RouterLink>
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            class="sk-btn"
+            @click="serverConfigOpen = !serverConfigOpen"
+          >
+            {{ serverConfigOpen ? 'Tutup URL Server' : 'URL Server API' }}
+          </button>
+          <RouterLink v-if="store.user" to="/" class="sk-btn">Kembali ke Beranda</RouterLink>
+        </div>
       </div>
+
+      <section
+        v-if="serverConfigOpen"
+        class="sk-card mb-5 space-y-3"
+        aria-label="Pengaturan alamat server API Laravel"
+      >
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 class="text-sm font-bold">Alamat Server Backend Laravel</h2>
+            <p class="text-xs text-[var(--muted)]">
+              Isi IP Wi-Fi laptop/server tanpa garis miring akhir, misalnya http://192.168.1.10:8000 (atau kosongkan jika akses via web biasa).
+            </p>
+          </div>
+          <span class="sk-pill sk-pill-neutral font-mono-id">
+            {{ getApiBaseUrl() || 'Origin Web Default' }}
+          </span>
+        </div>
+        <form class="flex flex-col sm:flex-row gap-2.5" @submit.prevent="saveAndTestServerUrl">
+          <input
+            v-model="apiServerInput"
+            type="url"
+            placeholder="http://192.168.1.10:8000"
+            class="sk-input font-mono-id text-sm flex-1"
+          />
+          <button type="submit" class="sk-btn sk-btn-primary shrink-0">
+            Simpan &amp; Cek Koneksi
+          </button>
+        </form>
+      </section>
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
         <section class="sk-card lg:col-span-7 flex flex-col justify-between gap-5">

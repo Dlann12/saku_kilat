@@ -4,6 +4,7 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
+        "build:capacitor": "vite build --config vite.capacitor.config.ts",
         "dev": "vite",
         "typecheck": "vue-tsc --noEmit"
     },
@@ -22,6 +23,9 @@
         "@laravel/multiplex": "^0.4.1"
     },
     "dependencies": {
+        "@capacitor/android": "^8.6.2",
+        "@capacitor/cli": "^8.6.2",
+        "@capacitor/core": "^8.6.2",
         "jsqr": "^1.4.0",
         "pinia": "^4.1.0",
         "qrcode": "^1.5.4",

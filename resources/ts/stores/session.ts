@@ -9,7 +9,7 @@ import type {
   UserProfile,
   WalletSummary,
 } from '@/types/sakukilat';
-import { apiFetch } from '@/utils/api';
+import { apiFetch, clearAuthToken } from '@/utils/api';
 
 const DEFAULT_APP_CONFIG: AppConfig = {
   permissions: {
@@ -111,11 +111,15 @@ export const useSessionStore = defineStore('session', () => {
   }
 
   async function logout(): Promise<void> {
-    await apiFetch('/api/v1/auth/logout', { method: 'POST' });
-    user.value = null;
-    walletSummary.value = null;
-    notifications.value = [];
-    unreadCount.value = 0;
+    try {
+      await apiFetch('/api/v1/auth/logout', { method: 'POST' });
+    } finally {
+      clearAuthToken();
+      user.value = null;
+      walletSummary.value = null;
+      notifications.value = [];
+      unreadCount.value = 0;
+    }
   }
 
   async function markNotificationsRead(): Promise<void> {

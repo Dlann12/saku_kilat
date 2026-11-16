@@ -4,7 +4,7 @@ import CashflowBarChart from '@/components/analytics/CashflowBarChart.vue';
 import AppIcon from '@/components/common/AppIcon.vue';
 import { useSessionStore } from '@/stores/session';
 import type { AnalyticsSummary, TransactionRecord } from '@/types/sakukilat';
-import { apiFetch } from '@/utils/api';
+import { apiFetch, getAuthToken, resolveApiUrl } from '@/utils/api';
 import { formatDateTimeWib, formatRupiah, signedRupiah } from '@/utils/format';
 
 const store = useSessionStore();
@@ -76,6 +76,25 @@ function selectDirection(dir: string): void {
   filters.direction = dir;
   void loadHistory();
 }
+
+async function downloadCsv(): Promise<void> {
+  const target = resolveApiUrl(csvHref.value);
+  const token = getAuthToken();
+  if (!token && !resolveApiUrl('/').startsWith('http')) {
+    window.location.href = target;
+    return;
+  }
+  const res = await fetch(target, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'mutasi-sakukilat.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
 </script>
 
 <template>
@@ -88,10 +107,10 @@ function selectDirection(dir: string): void {
         </p>
       </div>
       <div class="flex items-center gap-2">
-        <a :href="csvHref" class="sk-btn sk-btn-primary">
+        <button type="button" class="sk-btn sk-btn-primary" @click="downloadCsv">
           <AppIcon name="download" />
           <span>Unduh CSV</span>
-        </a>
+        </button>
         <RouterLink to="/" class="sk-btn">Beranda</RouterLink>
       </div>
     </div>

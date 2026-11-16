@@ -316,4 +316,45 @@ final class SakuKilatApiTest extends TestCase
             ->assertJsonPath('data.ledger_invariant.balanced', true)
             ->assertJsonPath('data.ledger_invariant.discrepancy', 0);
     }
+
+    public function test_mobile_capacitor_bearer_auth_and_session_flow(): void
+    {
+        // Native APK without token must NOT silently auto-login to demo persona
+        $this->withHeaders([
+            'Origin' => 'http://localhost',
+            'X-Saku-Mobile' => '1',
+        ])->getJson('/api/v1/auth/session')
+            ->assertOk()
+            ->assertJsonPath('data.authenticated', false)
+            ->assertJsonPath('data.user', null);
+
+        // Login from Capacitor origin over plain HTTP succeeds and yields Sanctum token
+        $login = $this->withHeaders([
+            'Origin' => 'http://localhost',
+            'X-Saku-Mobile' => '1',
+        ])->postJson('/api/v1/auth/login', [
+            'identifier' => 'compliance@sakukilat.id',
+            'pin' => '123456',
+            'device_id' => 'ANDROID-CAPACITOR-TEST',
+        ])->assertOk();
+
+        $token = (string) $login->json('data.token');
+        $this->assertNotEmpty($token);
+
+        // Subsequent Bearer-authenticated requests resolve session + admin config cleanly
+        $this->withHeaders([
+            'Origin' => 'http://localhost',
+            'X-Saku-Mobile' => '1',
+            'Authorization' => 'Bearer '.$token,
+        ])->getJson('/api/v1/auth/session')
+            ->assertOk()
+            ->assertJsonPath('data.authenticated', true)
+            ->assertJsonPath('data.user.email', 'compliance@sakukilat.id')
+            ->assertJsonPath('data.user.role', 'ADMIN');
+
+        $this->withHeaders([
+            'Authorization' => 'Bearer '.$token,
+        ])->getJson('/api/v1/wallets')
+            ->assertOk();
+    }
 }

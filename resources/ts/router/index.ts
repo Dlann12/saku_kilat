@@ -1,5 +1,6 @@
-import { createRouter, createWebHistory } from 'vue-router';
+import { createRouter, createWebHashHistory, createWebHistory } from 'vue-router';
 import { useSessionStore } from '@/stores/session';
+import { isCapacitorRuntime } from '@/utils/api';
 
 const HomeView = () => import('@/pages/HomeView.vue');
 const LoginView = () => import('@/pages/LoginView.vue');
@@ -15,7 +16,7 @@ const MerchantView = () => import('@/pages/MerchantView.vue');
 const AdminView = () => import('@/pages/AdminView.vue');
 
 export const router = createRouter({
-  history: createWebHistory(),
+  history: isCapacitorRuntime() ? createWebHashHistory() : createWebHistory(),
   routes: [
     { path: '/', name: 'home', component: HomeView, meta: { title: 'Beranda' } },
     { path: '/login', name: 'login', component: LoginView, meta: { title: 'Masuk SakuKilat', standalone: true } },
@@ -38,7 +39,11 @@ export const router = createRouter({
 router.beforeEach(async (to) => {
   const store = useSessionStore();
   if (!store.initialized) {
-    await store.fetchSession();
+    try {
+      await store.fetchSession();
+    } catch {
+      store.initialized = true;
+    }
   }
 
   document.title = to.meta.title ? `${to.meta.title}: SakuKilat` : 'Saku: Dompet Digital SakuKilat';
