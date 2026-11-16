@@ -221,7 +221,7 @@ function payShare(bill: SplitBill, shareAmount: number): void {
           <label for="sb-pay-wallet" class="text-sm font-medium">Dompet untuk Bayar Tagihan Saya</label>
           <select id="sb-pay-wallet" v-model="payWalletId" class="sk-input sm:w-[290px] text-sm">
             <option v-for="w in usableWallets" :key="w.id" :value="w.id">
-              {{ w.name }} — {{ formatRupiah(w.balance) }}
+              {{ w.name }} - {{ formatRupiah(w.balance) }}
             </option>
           </select>
         </div>

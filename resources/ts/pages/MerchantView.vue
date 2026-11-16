@@ -53,7 +53,7 @@ async function generateDynamicQr(): Promise<void> {
     },
   });
   activeQrPayload.value = res.raw_qr_payload;
-  activeQrLabel.value = `QRIS Dinamis — ${formatRupiah(res.amount)}`;
+  activeQrLabel.value = `QRIS Dinamis (${formatRupiah(res.amount)})`;
 }
 
 function submitSettlement(): void {
@@ -188,7 +188,7 @@ function submitSettlement(): void {
             <label for="settle-merchant" class="block text-xs font-medium text-[var(--muted)] mb-1">Outlet Sumber Dana</label>
             <select id="settle-merchant" v-model="settleForm.merchantId" class="sk-input text-sm">
               <option v-for="m in dashboard?.merchants ?? []" :key="m.id" :value="m.id">
-                {{ m.merchant_name }} — {{ formatRupiah(m.balance) }}
+                {{ m.merchant_name }} - {{ formatRupiah(m.balance) }}
               </option>
             </select>
           </div>

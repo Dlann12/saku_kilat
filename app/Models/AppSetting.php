@@ -27,4 +27,3 @@ final class AppSetting extends Model
         ];
     }
 }
-

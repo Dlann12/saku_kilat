@@ -1,51 +1,63 @@
 @import 'tailwindcss';
 
 :root {
-  --ground: #f3f5f7;
+  --ground: #faf8ff;
   --surface: #ffffff;
-  --raised: #f2f8fd;
-  --active: #eaecef;
-  --border: #e6e6e6;
-  --rule: #f4f4f4;
-  --control: #d6d9dd;
-  --text: #1b1d1f;
-  --muted: #5c6064;
-  --faint: #6b6b6b;
-  --accent: #1d5fd6;
-  --accent-soft: #dcf1ff;
-  --accent-ink: #0a3a80;
-  --primary: #1b1d1f;
-  --primary-ink: #ffffff;
-  --positive: #2f7a45;
-  --negative: #c41c29;
-  --warning: #92400e;
-  --chart-1: #1d5fd6;
-  --grid: #f0f1f3;
-  --axis-ink: #5c6064;
+  --container-low: #f2f3ff;
+  --container: #eaedff;
+  --container-high: #e2e7ff;
+  --container-highest: #dae2fd;
+  --raised: #f2f3ff;
+  --active: #e2e7ff;
+  --border: #dde2ec;
+  --rule: #eceff6;
+  --control: #8b9790;
+  --text: #131b2e;
+  --variant: #3d4a42;
+  --muted: #526058;
+  --faint: #526058;
 
-  --pill-positive-bg: #dcfae5;
-  --pill-positive-ink: #04250e;
-  --pill-negative-bg: #ffedea;
-  --pill-negative-ink: #831c1e;
-  --pill-warning-bg: #fffbeb;
-  --pill-warning-ink: #92400e;
-  --pill-neutral-bg: #eef1f4;
-  --pill-neutral-ink: #3a3d40;
-  --pill-accent-bg: #dcf1ff;
-  --pill-accent-ink: #0a3a80;
+  /* Saku Emerald Brand System (verified >= 5.2:1 contrast with white ink) */
+  --primary: #006948;
+  --primary-container: #007c56;
+  --primary-ink: #ffffff;
+  --accent: #006948;
+  --accent-soft: #e2faef;
+  --accent-ink: #005137;
+  --secondary-container: #6cf8bb;
+  --secondary-ink: #002114;
+
+  --positive: #006948;
+  --negative: #ba1a1a;
+  --warning: #92400e;
+  --chart-1: #006948;
+  --grid: #eaedff;
+  --axis-ink: #526058;
+
+  --pill-positive-bg: #dff8ec;
+  --pill-positive-ink: #005137;
+  --pill-negative-bg: #ffdad6;
+  --pill-negative-ink: #93000a;
+  --pill-warning-bg: #fef3c7;
+  --pill-warning-ink: #78350f;
+  --pill-neutral-bg: #f2f3ff;
+  --pill-neutral-ink: #131b2e;
+  --pill-accent-bg: #e2faef;
+  --pill-accent-ink: #005137;
 
   --pocket-food-bg: #fef3c7;
   --pocket-food-ink: #78350f;
-  --pocket-transport-bg: #dcf1ff;
-  --pocket-transport-ink: #0a3a80;
-  --pocket-savings-bg: #dcfae5;
-  --pocket-savings-ink: #04250e;
+  --pocket-transport-bg: #e2e7ff;
+  --pocket-transport-ink: #131b2e;
+  --pocket-savings-bg: #dff8ec;
+  --pocket-savings-ink: #005137;
   --pocket-bills-bg: #ccfbf1;
   --pocket-bills-ink: #115e59;
 
   --radius-card: 20px;
-  --radius-control: 10px;
-  --sidebar-width: 240px;
+  --radius-sub: 14px;
+  --radius-control: 12px;
+  --sidebar-width: 248px;
 }
 
 *,
@@ -63,10 +75,11 @@ body {
   margin: 0;
   background: var(--ground);
   color: var(--text);
-  font-family: 'Manrope', system-ui, -apple-system, sans-serif;
-  font-size: 16px;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  font-size: 15px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
 .font-mono-id {
@@ -80,36 +93,37 @@ table,
 }
 
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
-  border-radius: 6px;
+  border-radius: 8px;
 }
 
+/* Adaptive Desktop Workspace + One-Thumb Mobile Shell */
 .sk-shell {
   display: grid;
   grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
-  min-height: 100svh;
+  min-height: 100dvh;
 }
 
 .sk-sidebar {
   position: sticky;
   top: 0;
-  height: 100svh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   padding: 20px 14px;
-  background: var(--ground);
+  background: var(--surface);
   border-right: 1px solid var(--border);
   overflow-y: auto;
 }
 
 .sk-canvas {
   min-width: 0;
-  padding: 28px 32px;
+  padding: 28px 32px 48px;
 }
 
 .sk-container {
-  max-width: 1152px;
+  max-width: 1120px;
   margin: 0 auto;
 }
 
@@ -130,27 +144,68 @@ table,
     min-width: 0;
   }
 
+  .sk-hero-emerald {
+    background: var(--primary);
+    color: #ffffff;
+    border-radius: 20px;
+    padding: 22px;
+    border: 1px solid #005137;
+  }
+
+  .sk-segmented {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    gap: 4px;
+    padding: 4px;
+    border-radius: 14px;
+    background: var(--container-high);
+  }
+
+  .sk-segmented-btn {
+    min-height: 44px;
+    padding: 8px 12px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--variant);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+  }
+
+  .sk-segmented-btn.is-active {
+    background: var(--surface);
+    color: var(--primary);
+    border-color: var(--border);
+  }
+
   .sk-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    min-height: 40px;
+    min-height: 44px;
     padding: 0 16px;
     border-radius: var(--radius-control);
-    border: 1px solid var(--control);
+    border: 1px solid var(--border);
     background: var(--surface);
     color: var(--text);
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
-    transition: background-color 140ms ease, transform 110ms ease;
+    transition: background-color 140ms ease, transform 110ms ease, border-color 140ms ease;
     text-decoration: none;
     white-space: nowrap;
   }
 
   .sk-btn:hover:not(:disabled) {
-    background: var(--raised);
+    background: var(--container-low);
   }
 
   .sk-btn:active:not(:disabled) {
@@ -158,54 +213,60 @@ table,
   }
 
   .sk-btn:disabled {
-    opacity: 0.55;
+    opacity: 0.52;
     cursor: not-allowed;
   }
 
   .sk-btn-primary {
-    background: var(--accent);
-    color: #ffffff;
-    border-color: transparent;
-  }
-
-  .sk-btn-primary:hover:not(:disabled) {
-    background: #1750b8;
-  }
-
-  .sk-btn-dark {
     background: var(--primary);
     color: var(--primary-ink);
     border-color: transparent;
   }
 
+  .sk-btn-primary:hover:not(:disabled) {
+    background: #00583c;
+  }
+
+  .sk-btn-dark {
+    background: #131b2e;
+    color: #ffffff;
+    border-color: transparent;
+  }
+
   .sk-btn-dark:hover:not(:disabled) {
-    background: #2c3034;
+    background: #232f4b;
   }
 
   .sk-input {
     width: 100%;
-    height: 40px;
-    padding: 0 12px;
+    min-height: 44px;
+    padding: 0 14px;
     border: 1px solid var(--control);
     border-radius: var(--radius-control);
     background: var(--surface);
     color: var(--text);
     font-size: 15px;
+    transition: border-color 140ms ease, background-color 140ms ease;
+  }
+
+  .sk-input:focus {
+    outline: none;
+    border-color: var(--primary);
   }
 
   .sk-input::placeholder {
-    color: var(--faint);
+    color: var(--muted);
   }
 
   .sk-pill {
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    height: 22px;
-    padding: 0 9px;
-    border-radius: 999px;
+    min-height: 24px;
+    padding: 2px 10px;
+    border-radius: 9999px;
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 600;
     white-space: nowrap;
     flex: none;
   }
@@ -242,11 +303,11 @@ table,
 }
 
 .sk-table th {
-  height: 36px;
+  height: 38px;
   padding: 0 12px;
   text-align: left;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--muted);
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
@@ -268,31 +329,71 @@ table,
   text-align: right;
 }
 
+/* Perforated e-receipt divider matching screen 08 */
+.sk-ticket-divider {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 24px;
+}
+
+.sk-ticket-divider::before,
+.sk-ticket-divider::after {
+  content: '';
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-radius: 9999px;
+  background: var(--container-low);
+  top: 0;
+}
+
+.sk-ticket-divider::before {
+  left: -12px;
+}
+
+.sk-ticket-divider::after {
+  right: -12px;
+}
+
+/* Scrollbar utility for horizontal category/contact rails */
+.sk-scroll-x {
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.sk-scroll-x::-webkit-scrollbar {
+  display: none;
+}
+
 @media (max-width: 860px) {
   .sk-shell {
     grid-template-columns: minmax(0, 1fr);
-    padding-bottom: 84px;
+    padding-bottom: 88px;
   }
 
   .sk-sidebar {
     display: none;
   }
 
+  /* Glassmorphism kept strictly on sticky header per antislop R-10 dose cap */
   .sk-mobile-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     position: sticky;
     top: 0;
-    z-index: 30;
-    height: 52px;
+    z-index: 40;
+    height: 60px;
     padding: 0 16px;
-    background: var(--surface);
+    background: rgba(250, 248, 255, 0.88);
+    backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border);
   }
 
   .sk-canvas {
-    padding: 16px 16px 96px;
+    padding: 16px 16px 104px;
   }
 
   .sk-bottom-nav {
@@ -305,9 +406,10 @@ table,
     bottom: 0;
     z-index: 40;
     height: 68px;
-    padding: 6px 8px 8px;
+    padding: 6px 8px calc(8px + env(safe-area-inset-bottom, 0px));
     background: var(--surface);
     border-top: 1px solid var(--border);
+    box-shadow: 0 -4px 18px rgba(19, 27, 46, 0.05);
   }
 }
 

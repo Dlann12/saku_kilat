@@ -133,20 +133,23 @@ async function useDemoPersona(userId: string, role: string): Promise<void> {
     <div class="max-w-[920px] mx-auto">
       <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div class="flex items-center gap-3">
-          <svg width="36" height="36" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-            <rect width="32" height="32" rx="9" fill="#1D5FD6" />
-            <path
-              d="M17.5 6.5L10 17.5H16L14.5 25.5L22 14.5H16L17.5 6.5Z"
-              fill="#FFFFFF"
-              stroke="#FFFFFF"
-              stroke-width="1"
-              stroke-linejoin="round"
-            />
-          </svg>
+          <span
+            class="w-10 h-10 rounded-[12px] bg-[var(--primary)] text-white flex items-center justify-center shrink-0"
+            aria-hidden="true"
+          >
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M4 7.5A2.5 2.5 0 0 1 6.5 5h10A2.5 2.5 0 0 1 19 7.5V9h-4.5a3 3 0 0 0 0 6H19v1.5a2.5 2.5 0 0 1-2.5 2.5h-10A2.5 2.5 0 0 1 4 16.5v-9Z"
+                stroke="currentColor"
+                stroke-width="2"
+              />
+              <circle cx="15" cy="12" r="1.4" fill="#6CF8BB" />
+            </svg>
+          </span>
           <div>
-            <h1 class="text-xl font-semibold tracking-tight leading-tight">Masuk SakuKilat</h1>
+            <h1 class="text-xl font-bold tracking-tight leading-tight">Masuk Saku</h1>
             <p class="text-xs text-[var(--muted)]">
-              Satu pintu login untuk Pengguna, Merchant UMKM, maupun Administrator Kepatuhan
+              Satu pintu login untuk Pengguna, Merchant UMKM, dan Administrator
             </p>
           </div>
         </div>
@@ -240,7 +243,7 @@ async function useDemoPersona(userId: string, role: string): Promise<void> {
               <form class="space-y-3 pb-4 border-b border-[var(--rule)]" @submit.prevent="requestOtp">
                 <div class="flex items-center justify-between">
                   <span class="text-xs font-semibold text-[var(--accent)]">
-                    Langkah 1 — Kirim Kode OTP
+                    Langkah 1: Kirim Kode OTP
                   </span>
                   <span v-if="countdown > 0" class="text-xs text-[var(--muted)] num">
                     Sisa waktu: {{ countdown }}d
@@ -260,7 +263,7 @@ async function useDemoPersona(userId: string, role: string): Promise<void> {
 
               <form class="space-y-3 pb-4 border-b border-[var(--rule)]" @submit.prevent="verifyOtp">
                 <span class="block text-xs font-semibold text-[var(--accent)]">
-                  Langkah 2 — Verifikasi Kode 6-Digit
+                  Langkah 2: Verifikasi Kode 6-Digit
                 </span>
                 <div class="flex flex-col sm:flex-row gap-2.5">
                   <input
@@ -281,7 +284,7 @@ async function useDemoPersona(userId: string, role: string): Promise<void> {
 
               <form class="space-y-3" @submit.prevent="completeRegistration">
                 <span class="block text-xs font-semibold text-[var(--accent)]">
-                  Langkah 3 — Profil &amp; Buat PIN
+                  Langkah 3: Profil &amp; Buat PIN
                 </span>
                 <div>
                   <label for="reg-name" class="block text-[13px] font-medium text-[var(--muted)] mb-1">Nama Lengkap</label>

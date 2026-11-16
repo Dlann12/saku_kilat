@@ -62,8 +62,16 @@ export function decodeQrFromImageFile(file: File): Promise<string> {
         reject(new Error('Gambar tidak mengandung kode QRIS yang dapat dibaca.'));
       }
     };
-    img.onerror = () => reject(new Error('Gagal memuat berkas gambar.'));
+      img.onerror = () => reject(new Error('Gagal memuat berkas gambar.'));
     img.src = URL.createObjectURL(file);
   });
 }
+
+export function getInitials(name?: string | null): string {
+  const parts = (name ?? '').trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return 'SK';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+}
+
 

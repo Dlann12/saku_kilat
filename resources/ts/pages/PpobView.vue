@@ -212,7 +212,7 @@ function submitOrder(): void {
             <label for="ppob-wallet" class="block text-xs font-medium text-[var(--muted)] mb-1.5">Sumber Dana</label>
             <select id="ppob-wallet" v-model="selectedWalletId" class="sk-input text-sm">
               <option v-for="w in usableWallets" :key="w.id" :value="w.id">
-                {{ w.name }} — {{ formatRupiah(w.balance) }}
+                {{ w.name }} - {{ formatRupiah(w.balance) }}
               </option>
             </select>
           </div>

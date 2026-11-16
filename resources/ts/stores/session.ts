@@ -44,6 +44,10 @@ interface SessionResponse {
 export interface PinPromptConfig {
   title: string;
   amount: number | null;
+  recipientName?: string;
+  recipientSub?: string;
+  adminFee?: number;
+  sourceWalletName?: string;
   onAuthorized: (txAuthToken: string) => Promise<void>;
 }
 

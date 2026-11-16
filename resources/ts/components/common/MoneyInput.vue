@@ -21,8 +21,8 @@ withDefaults(
 </script>
 
 <template>
-  <div class="flex items-center h-11 rounded-[10px] border border-[var(--control)] bg-[var(--surface)] px-3 focus-within:border-[var(--accent)]">
-    <span class="text-sm font-semibold text-[var(--muted)] mr-2 shrink-0">Rp</span>
+  <div class="flex items-center min-h-[48px] rounded-[12px] border border-[var(--control)] bg-[var(--surface)] px-3.5 focus-within:border-[var(--primary)]">
+    <span class="text-sm font-bold text-[var(--muted)] mr-2 shrink-0">Rp</span>
     <input
       :id="id"
       v-model.number="model"
@@ -32,8 +32,7 @@ withDefaults(
       :step="step"
       :readonly="readonly"
       :required="required"
-      class="w-full bg-transparent border-0 outline-none text-base font-semibold num"
+      class="w-full bg-transparent border-0 outline-none text-[18px] font-bold num text-[var(--text)]"
     />
   </div>
 </template>
-

@@ -41,7 +41,7 @@ router.beforeEach(async (to) => {
     await store.fetchSession();
   }
 
-  document.title = to.meta.title ? `${to.meta.title} — SakuKilat` : 'SakuKilat';
+  document.title = to.meta.title ? `${to.meta.title}: SakuKilat` : 'Saku: Dompet Digital SakuKilat';
 
   if (to.name !== 'login' && !store.user) {
     return { name: 'login' };

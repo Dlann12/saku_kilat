@@ -10,8 +10,8 @@ export default defineConfig({
             input: ['resources/css/app.css', 'resources/ts/main.ts'],
             refresh: true,
             fonts: [
-                bunny('Manrope', {
-                    weights: [400, 500, 600],
+                bunny('Plus Jakarta Sans', {
+                    weights: [400, 500, 600, 700],
                 }),
                 bunny('JetBrains Mono', {
                     weights: [400, 500],
