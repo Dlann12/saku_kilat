@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia';
 import { ref, shallowRef } from 'vue';
 import type {
+  AppConfig,
+  AppPermissions,
   DemoPersona,
   TransactionRecord,
   UserNotification,
@@ -9,6 +11,25 @@ import type {
 } from '@/types/sakukilat';
 import { apiFetch } from '@/utils/api';
 
+const DEFAULT_APP_CONFIG: AppConfig = {
+  permissions: {
+    allow_topup: true,
+    allow_qris: true,
+    allow_p2p_transfer: true,
+    allow_bank_transfer: true,
+    allow_ppob: true,
+    allow_split_bill: true,
+    allow_pockets: true,
+    allow_kyc_submission: true,
+  },
+  limits: {
+    unverified_balance_limit: 2_000_000,
+    verified_balance_limit: 20_000_000,
+    bifast_monthly_free_quota: 10,
+    bifast_fee_after_quota: 2_500,
+  },
+};
+
 interface SessionResponse {
   authenticated: boolean;
   user: UserProfile | null;
@@ -16,6 +37,7 @@ interface SessionResponse {
   demo_personas: DemoPersona[];
   notifications: UserNotification[];
   unread_count: number;
+  app_config?: AppConfig;
   csrf_token: string;
 }
 
@@ -32,6 +54,7 @@ export const useSessionStore = defineStore('session', () => {
   const notifications = ref<UserNotification[]>([]);
   const unreadCount = shallowRef(0);
   const walletSummary = ref<WalletSummary | null>(null);
+  const appConfig = ref<AppConfig>(DEFAULT_APP_CONFIG);
 
   const notifOpen = shallowRef(false);
   const mobileDrawerOpen = shallowRef(false);
@@ -45,8 +68,19 @@ export const useSessionStore = defineStore('session', () => {
     demoPersonas.value = res.demo_personas;
     notifications.value = res.notifications;
     unreadCount.value = res.unread_count;
+    if (res.app_config) {
+      appConfig.value = res.app_config;
+    }
     initialized.value = true;
     return res;
+  }
+
+  function canUse(permission: keyof AppPermissions): boolean {
+    return appConfig.value.permissions[permission] ?? true;
+  }
+
+  function setAppConfig(cfg: AppConfig): void {
+    appConfig.value = cfg;
   }
 
   async function fetchWallets(): Promise<WalletSummary | null> {
@@ -108,12 +142,15 @@ export const useSessionStore = defineStore('session', () => {
     notifications,
     unreadCount,
     walletSummary,
+    appConfig,
     notifOpen,
     mobileDrawerOpen,
     activeReceipt,
     activePinPrompt,
     flashMessage,
     fetchSession,
+    canUse,
+    setAppConfig,
     fetchWallets,
     switchDemoPersona,
     logout,
@@ -124,4 +161,3 @@ export const useSessionStore = defineStore('session', () => {
     closePin,
   };
 });
-

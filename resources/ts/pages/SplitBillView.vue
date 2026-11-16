@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, ref, shallowRef, watch } from 'vue';
+import FeatureDisabledNotice from '@/components/common/FeatureDisabledNotice.vue';
 import MoneyInput from '@/components/common/MoneyInput.vue';
 import { useSessionStore } from '@/stores/session';
 import type { SplitBill, TransactionRecord } from '@/types/sakukilat';
@@ -128,6 +129,8 @@ function payShare(bill: SplitBill, shareAmount: number): void {
       <RouterLink to="/" class="sk-btn">Kembali</RouterLink>
     </div>
 
+    <FeatureDisabledNotice :enabled="store.canUse('allow_split_bill')" feature-name="Patungan (Split Bill)" />
+
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
       <section class="sk-card lg:col-span-5 space-y-4">
         <div>
@@ -207,7 +210,9 @@ function payShare(bill: SplitBill, shareAmount: number): void {
             </div>
           </div>
 
-          <button type="submit" class="w-full sk-btn sk-btn-primary">Kirim Tagihan Patungan</button>
+          <button type="submit" :disabled="!store.canUse('allow_split_bill')" class="w-full sk-btn sk-btn-primary">
+            Kirim Tagihan Patungan
+          </button>
         </form>
       </section>
 
@@ -262,6 +267,7 @@ function payShare(bill: SplitBill, shareAmount: number): void {
             <span class="text-xs text-[var(--muted)]">Bagian Anda belum dibayar</span>
             <button
               type="button"
+              :disabled="!store.canUse('allow_split_bill')"
               class="sk-btn sk-btn-primary min-h-[36px] text-xs"
               @click="payShare(bill, myPendingParticipant(bill)!.share_amount)"
             >

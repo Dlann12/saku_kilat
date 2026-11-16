@@ -35,6 +35,7 @@ final class PaymentService
         private readonly SecurityService $security,
         private readonly QrisService $qris,
         private readonly WalletService $wallets,
+        private readonly AppConfigService $appConfig,
     ) {}
 
     public function decodeQris(string $rawPayload): array
@@ -97,6 +98,8 @@ final class PaymentService
         array $data,
         string $idempotencyKey,
     ): Transaction {
+        $this->appConfig->ensureEnabled('allow_qris', 'Pembayaran QRIS');
+
         if (! $this->security->consumeTxAuthToken($data['tx_auth_token'], $user->id)) {
             throw new DomainException(
                 'TX_AUTH_INVALID',
@@ -232,6 +235,8 @@ final class PaymentService
         array $data,
         string $idempotencyKey,
     ): Transaction {
+        $this->appConfig->ensureEnabled('allow_p2p_transfer', 'Transfer Sesama SakuKilat');
+
         if (! $this->security->consumeTxAuthToken($data['tx_auth_token'], $user->id)) {
             throw new DomainException('TX_AUTH_INVALID', 'Token otorisasi PIN tidak valid atau kedaluwarsa.', 401);
         }
@@ -328,6 +333,8 @@ final class PaymentService
         array $data,
         string $idempotencyKey,
     ): array {
+        $this->appConfig->ensureEnabled('allow_bank_transfer', 'Transfer Bank BI-FAST');
+
         if (! $this->security->consumeTxAuthToken($data['tx_auth_token'], $user->id)) {
             throw new DomainException('TX_AUTH_INVALID', 'Token otorisasi PIN kedaluwarsa atau tidak valid.', 401);
         }
@@ -353,7 +360,8 @@ final class PaymentService
 
             $quota = $this->wallets->getMonthlyBiFastUsage($freshUser);
             $isFree = $quota['remaining_free'] > 0;
-            $adminFee = $isFree ? 0 : (int) config('sakukilat.bifast_admin_fee', 2500);
+            $feeAfterQuota = (int) ($this->appConfig->get()['limits']['bifast_fee_after_quota'] ?? config('sakukilat.bifast_admin_fee', 2500));
+            $adminFee = $isFree ? 0 : $feeAfterQuota;
             $amount = (int) $data['amount'];
 
             $escrowId = $this->ledger->systemWalletId('SYSTEM_ESCROW');
@@ -439,6 +447,8 @@ final class PaymentService
         array $data,
         string $idempotencyKey,
     ): Transaction {
+        $this->appConfig->ensureEnabled('allow_ppob', 'Pembelian & Tagihan PPOB');
+
         if (! $this->security->consumeTxAuthToken($data['tx_auth_token'], $user->id)) {
             throw new DomainException('TX_AUTH_INVALID', 'Token otorisasi PIN tidak valid atau kedaluwarsa.', 401);
         }

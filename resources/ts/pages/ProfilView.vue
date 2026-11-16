@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { reactive, ref, shallowRef, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import FeatureDisabledNotice from '@/components/common/FeatureDisabledNotice.vue';
 import QrCodeBox from '@/components/common/QrCodeBox.vue';
 import { useSessionStore } from '@/stores/session';
 import { apiFetch } from '@/utils/api';
@@ -48,9 +49,8 @@ async function toggleBiometric(): Promise<void> {
 }
 
 async function handleLogout(): Promise<void> {
-  const wasAdmin = store.user?.role === 'ADMIN';
   await store.logout();
-  await router.push(wasAdmin ? '/admin/login' : '/login');
+  await router.push('/login');
 }
 
 async function submitKyc(): Promise<void> {
@@ -141,9 +141,8 @@ async function submitKyc(): Promise<void> {
         </div>
 
         <div class="pt-3 border-t border-[var(--rule)] flex flex-wrap gap-2.5">
-          <RouterLink to="/login" class="sk-btn flex-1">Login Pengguna</RouterLink>
-          <RouterLink to="/admin/login" class="sk-btn flex-1">Login Admin</RouterLink>
-          <button type="button" class="w-full sk-btn text-[var(--negative)]" @click="handleLogout">
+          <RouterLink to="/login" class="sk-btn flex-1">Ganti Akun / Login</RouterLink>
+          <button type="button" class="flex-1 sk-btn text-[var(--negative)]" @click="handleLogout">
             Keluar Sesi
           </button>
         </div>
@@ -181,6 +180,10 @@ async function submitKyc(): Promise<void> {
         </div>
 
         <template v-else>
+          <FeatureDisabledNotice
+            :enabled="store.canUse('allow_kyc_submission')"
+            feature-name="Pengajuan Verifikasi e-KTP (KYC)"
+          />
           <div v-if="kycError" class="p-3 rounded-[10px] bg-[var(--pill-negative-bg)] text-[var(--pill-negative-ink)] text-sm">
             {{ kycError }}
           </div>
@@ -215,7 +218,9 @@ async function submitKyc(): Promise<void> {
               <input v-model="kycForm.liveness" type="checkbox" required class="accent-[var(--accent)]" />
               <span>Saya menyatakan foto e-KTP asli &amp; pemeriksaan liveness wajah lulus.</span>
             </label>
-            <button type="submit" class="w-full sk-btn sk-btn-primary">Ajukan Verifikasi e-KTP</button>
+            <button type="submit" :disabled="!store.canUse('allow_kyc_submission')" class="w-full sk-btn sk-btn-primary">
+              Ajukan Verifikasi e-KTP
+            </button>
           </form>
         </template>
       </section>

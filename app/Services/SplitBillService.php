@@ -20,6 +20,7 @@ final class SplitBillService
         private readonly LedgerService $ledger,
         private readonly SecurityService $security,
         private readonly WalletService $wallets,
+        private readonly AppConfigService $appConfig,
     ) {}
 
     public function listForUser(User $user): array
@@ -59,6 +60,8 @@ final class SplitBillService
 
     public function create(User $creator, array $data): SplitBill
     {
+        $this->appConfig->ensureEnabled('allow_split_bill', 'Patungan (Split Bill)');
+
         return DB::transaction(function () use ($creator, $data): SplitBill {
             $peerPhones = collect($data['participant_phones'])
                 ->map(fn (string $ph): string => $this->security->normalizePhone($ph))
@@ -183,6 +186,8 @@ final class SplitBillService
         array $data,
         string $idempotencyKey,
     ): Transaction {
+        $this->appConfig->ensureEnabled('allow_split_bill', 'Patungan (Split Bill)');
+
         if (! $this->security->consumeTxAuthToken($data['tx_auth_token'], $payer->id)) {
             throw new DomainException('TX_AUTH_INVALID', 'Token otorisasi PIN tidak valid atau kedaluwarsa.', 401);
         }

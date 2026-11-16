@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, shallowRef, watch } from 'vue';
+import AppConfigPanel from '@/components/admin/AppConfigPanel.vue';
 import { useSessionStore } from '@/stores/session';
-import type { AdminOverview } from '@/types/sakukilat';
+import type { AdminOverview, AppConfig } from '@/types/sakukilat';
 import { apiFetch } from '@/utils/api';
 import { formatDateTimeWib, formatRupiah } from '@/utils/format';
 
@@ -15,9 +16,20 @@ const adminPersona = computed(() => store.demoPersonas.find((p) => p.role === 'A
 async function loadAdmin(): Promise<void> {
   if (!store.user) return;
   overview.value = await apiFetch<AdminOverview>('/api/v1/admin/overview');
+  if (overview.value.app_config) {
+    store.setAppConfig(overview.value.app_config);
+  }
 }
 
 watch(() => store.user?.id, () => void loadAdmin(), { immediate: true });
+
+async function handleConfigSaved(nextConfig: AppConfig): Promise<void> {
+  store.setAppConfig(nextConfig);
+  if (overview.value) {
+    overview.value.app_config = nextConfig;
+  }
+  await store.fetchSession();
+}
 
 async function reviewKyc(docId: string, decision: 'VERIFIED' | 'REJECTED'): Promise<void> {
   errorMsg.value = '';
@@ -68,15 +80,22 @@ async function reverseTx(txId: string): Promise<void> {
       class="mb-5 p-4 rounded-[14px] border border-[#f5d08a] bg-[var(--pill-warning-bg)] text-[var(--pill-warning-ink)] flex flex-wrap items-center justify-between gap-3"
     >
       <div class="text-sm">
-        Anda sedang dalam mode baca. Masuk lewat Portal Admin untuk menyetujui KYC atau mengeksekusi Auto-Reversal.
+        Anda sedang dalam mode baca. Masuk dengan akun Admin lewat <span class="font-medium">/login</span> untuk mengatur konfigurasi aplikasi, KYC, dan Auto-Reversal.
       </div>
       <div class="flex flex-wrap gap-2">
-        <RouterLink to="/admin/login" class="sk-btn min-h-[34px] text-xs">Buka Login Admin</RouterLink>
+        <RouterLink to="/login" class="sk-btn min-h-[34px] text-xs">Buka Halaman Login</RouterLink>
         <button type="button" class="sk-btn min-h-[34px] text-xs" @click="store.switchDemoPersona(adminPersona.id)">
           Masuk Cepat sebagai {{ adminPersona.full_name }}
         </button>
       </div>
     </div>
+
+    <AppConfigPanel
+      v-if="overview"
+      :config="overview.app_config ?? store.appConfig"
+      :is-admin="isAdmin"
+      @saved="handleConfigSaved"
+    />
 
     <div v-if="overview" class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
       <div class="sk-card">

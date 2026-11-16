@@ -8,6 +8,7 @@ use App\Exceptions\DomainException;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\UserNotification;
+use App\Services\AppConfigService;
 use App\Services\AuthService;
 use App\Services\IdempotencyService;
 use App\Services\MerchantAdminService;
@@ -20,6 +21,7 @@ final class MerchantAdminController extends Controller
         private readonly MerchantAdminService $merchantAdmin,
         private readonly AuthService $auth,
         private readonly IdempotencyService $idempotency,
+        private readonly AppConfigService $appConfig,
     ) {}
 
     public function merchantDashboard(Request $request): JsonResponse
@@ -117,6 +119,35 @@ final class MerchantAdminController extends Controller
                 $data['reason'] ?? 'Timeout / Rekonsiliasi Harian Otomatis'
             ),
         ]);
+    }
+
+    public function adminConfigShow(): JsonResponse
+    {
+        return response()->json(['data' => $this->appConfig->get()]);
+    }
+
+    public function adminConfigUpdate(Request $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        $data = $request->validate([
+            'permissions' => ['sometimes', 'array'],
+            'permissions.allow_topup' => ['sometimes', 'boolean'],
+            'permissions.allow_qris' => ['sometimes', 'boolean'],
+            'permissions.allow_p2p_transfer' => ['sometimes', 'boolean'],
+            'permissions.allow_bank_transfer' => ['sometimes', 'boolean'],
+            'permissions.allow_ppob' => ['sometimes', 'boolean'],
+            'permissions.allow_split_bill' => ['sometimes', 'boolean'],
+            'permissions.allow_pockets' => ['sometimes', 'boolean'],
+            'permissions.allow_kyc_submission' => ['sometimes', 'boolean'],
+            'limits' => ['sometimes', 'array'],
+            'limits.unverified_balance_limit' => ['sometimes', 'integer', 'min:100000', 'max:50000000'],
+            'limits.verified_balance_limit' => ['sometimes', 'integer', 'min:500000', 'max:100000000'],
+            'limits.bifast_monthly_free_quota' => ['sometimes', 'integer', 'min:0', 'max:100'],
+            'limits.bifast_fee_after_quota' => ['sometimes', 'integer', 'min:0', 'max:25000'],
+        ]);
+
+        return response()->json(['data' => $this->appConfig->update($user, $data)]);
     }
 
     public function markNotificationsRead(Request $request): JsonResponse

@@ -29,6 +29,7 @@ final class WalletService
     public function __construct(
         private readonly LedgerService $ledger,
         private readonly SecurityService $security,
+        private readonly AppConfigService $appConfig,
     ) {}
 
     public function getBalanceLimitInfo(User $user): array
@@ -57,7 +58,8 @@ final class WalletService
             ->whereBetween('created_at', [$start, $end])
             ->count();
 
-        $freeQuota = (int) config('sakukilat.bifast_monthly_free_quota', 10);
+        $limits = $this->appConfig->get()['limits'];
+        $freeQuota = (int) ($limits['bifast_monthly_free_quota'] ?? config('sakukilat.bifast_monthly_free_quota', 10));
 
         return [
             'used_this_month' => $used,
@@ -102,6 +104,8 @@ final class WalletService
 
     public function createPocket(User $user, array $data): Wallet
     {
+        $this->appConfig->ensureEnabled('allow_pockets', 'Kantong Pintar');
+
         $count = Wallet::query()
             ->where('user_id', $user->id)
             ->where('wallet_type', 'POCKET')
@@ -159,6 +163,8 @@ final class WalletService
         int $amount,
         string $idempotencyKey,
     ): Transaction {
+        $this->appConfig->ensureEnabled('allow_pockets', 'Kantong Pintar');
+
         if ($sourceWalletId === $destinationWalletId) {
             throw new DomainException('SAME_WALLET', 'Dompet sumber dan tujuan tidak boleh sama.', 400);
         }
@@ -216,6 +222,8 @@ final class WalletService
 
     public function createTopupOrder(User $user, string $channel, int $amount): TopupOrder
     {
+        $this->appConfig->ensureEnabled('allow_topup', 'Top Up Saldo');
+
         $cfg = self::TOPUP_CHANNELS[$channel] ?? null;
         if (! $cfg) {
             throw new DomainException('INVALID_CHANNEL', 'Kanal Top Up tidak dikenal.', 400);

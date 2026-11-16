@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, shallowRef, watch } from 'vue';
 import AppIcon from '@/components/common/AppIcon.vue';
+import FeatureDisabledNotice from '@/components/common/FeatureDisabledNotice.vue';
 import MoneyInput from '@/components/common/MoneyInput.vue';
 import { useSessionStore } from '@/stores/session';
 import type { TransactionRecord, Wallet } from '@/types/sakukilat';
@@ -109,6 +110,8 @@ async function createPocket(): Promise<void> {
       </div>
       <RouterLink to="/" class="sk-btn">Kembali</RouterLink>
     </div>
+
+    <FeatureDisabledNotice :enabled="store.canUse('allow_pockets')" feature-name="Kantong Pintar (Buat & Pindah Saldo)" />
 
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
       <div class="sk-card">
@@ -226,7 +229,9 @@ async function createPocket(): Promise<void> {
             <div v-if="moveError" class="p-2.5 rounded-[8px] bg-[var(--pill-negative-bg)] text-[var(--pill-negative-ink)] text-xs">
               {{ moveError }}
             </div>
-            <button type="submit" class="w-full sk-btn sk-btn-primary">Pindahkan Sekarang</button>
+            <button type="submit" :disabled="!store.canUse('allow_pockets')" class="w-full sk-btn sk-btn-primary">
+              Pindahkan Sekarang
+            </button>
           </form>
         </div>
 
@@ -257,7 +262,7 @@ async function createPocket(): Promise<void> {
             <div v-if="createError" class="p-2.5 rounded-[8px] bg-[var(--pill-negative-bg)] text-[var(--pill-negative-ink)] text-xs">
               {{ createError }}
             </div>
-            <button type="submit" class="w-full sk-btn">Buat Kantong Baru</button>
+            <button type="submit" :disabled="!store.canUse('allow_pockets')" class="w-full sk-btn">Buat Kantong Baru</button>
           </form>
         </div>
       </aside>

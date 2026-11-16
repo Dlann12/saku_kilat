@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Services\AppConfigService;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -80,8 +81,10 @@ final class User extends Authenticatable
 
     public function balanceLimit(): int
     {
+        $limits = app(AppConfigService::class)->get()['limits'];
+
         return $this->kyc_status === 'VERIFIED'
-            ? (int) config('sakukilat.verified_balance_limit', 20_000_000)
-            : (int) config('sakukilat.unverified_balance_limit', 2_000_000);
+            ? (int) ($limits['verified_balance_limit'] ?? 20_000_000)
+            : (int) ($limits['unverified_balance_limit'] ?? 2_000_000);
     }
 }

@@ -21,6 +21,7 @@ final class MerchantAdminService
         private readonly LedgerService $ledger,
         private readonly SecurityService $security,
         private readonly QrisService $qris,
+        private readonly AppConfigService $appConfig,
     ) {}
 
     public function getMerchantDashboard(User $user): array
@@ -234,6 +235,7 @@ final class MerchantAdminService
             'outbox_events' => $outboxEvents,
             'recent_ledger_entries' => $recentLedgerEntries,
             'recent_transactions' => $recentTransactions,
+            'app_config' => $this->appConfig->get(),
         ];
     }
 

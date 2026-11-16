@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
-use App\Exceptions\DomainException;
 use App\Http\Controllers\Controller;
 use App\Models\KycDocument;
 use App\Models\User;
 use App\Models\UserNotification;
+use App\Services\AppConfigService;
 use App\Services\AuthService;
 use App\Services\QrisService;
 use Database\Seeders\DatabaseSeeder;
@@ -22,6 +22,7 @@ final class AuthController extends Controller
     public function __construct(
         private readonly AuthService $auth,
         private readonly QrisService $qris,
+        private readonly AppConfigService $appConfig,
     ) {}
 
     public function otpRequest(Request $request): JsonResponse
@@ -84,50 +85,14 @@ final class AuthController extends Controller
     public function login(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'phone_number' => ['required', 'string', 'min:9', 'max:20'],
+            'identifier' => ['required_without:phone_number', 'nullable', 'string', 'min:4', 'max:160'],
+            'phone_number' => ['required_without:identifier', 'nullable', 'string', 'min:9', 'max:20'],
             'pin' => ['required', 'regex:/^\d{6}$/'],
             'device_id' => ['nullable', 'string', 'max:120'],
-            'portal' => ['sometimes', 'in:USER,ADMIN'],
         ]);
 
         $res = $this->auth->loginWithPin(
-            $data['phone_number'],
-            $data['pin'],
-            $data['device_id'] ?? $request->header('X-Device-Id')
-        );
-
-        /** @var User $user */
-        $user = $res['user'];
-        if (($data['portal'] ?? null) === 'USER' && $user->role === 'ADMIN') {
-            throw new DomainException(
-                'PORTAL_MISMATCH',
-                'Akun Compliance Admin harus masuk melalui halaman Login Admin (/admin/login).',
-                403
-            );
-        }
-
-        $token = $this->establishWebSession($request, $user);
-
-        return response()->json([
-            'data' => [
-                'user' => $user,
-                'device_changed' => $res['device_changed'],
-                'token' => $token,
-                'csrf_token' => csrf_token(),
-            ],
-        ]);
-    }
-
-    public function adminLogin(Request $request): JsonResponse
-    {
-        $data = $request->validate([
-            'identifier' => ['required', 'string', 'min:4', 'max:160'],
-            'pin' => ['required', 'regex:/^\d{6}$/'],
-            'device_id' => ['nullable', 'string', 'max:120'],
-        ]);
-
-        $res = $this->auth->loginAdminWithPin(
-            $data['identifier'],
+            (string) ($data['identifier'] ?? $data['phone_number']),
             $data['pin'],
             $data['device_id'] ?? $request->header('X-Device-Id')
         );
@@ -179,6 +144,7 @@ final class AuthController extends Controller
                 'demo_personas' => $demoPersonas,
                 'notifications' => $notifications,
                 'unread_count' => $notifications->where('is_read', false)->count(),
+                'app_config' => $this->appConfig->get(),
                 'csrf_token' => csrf_token(),
             ],
         ]);
@@ -210,6 +176,8 @@ final class AuthController extends Controller
     private function establishWebSession(Request $request, User $user): string
     {
         Auth::guard('web')->login($user);
+        Auth::guard('sanctum')->forgetUser();
+        Auth::forgetGuards();
         if ($request->hasSession()) {
             $request->session()->forget('sakukilat_logged_out');
         }
@@ -224,6 +192,8 @@ final class AuthController extends Controller
             $user->currentAccessToken()->delete();
         }
         Auth::guard('web')->logout();
+        Auth::guard('sanctum')->forgetUser();
+        Auth::forgetGuards();
         if ($request->hasSession()) {
             $request->session()->invalidate();
             $request->session()->regenerateToken();

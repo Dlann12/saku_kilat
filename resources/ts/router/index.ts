@@ -2,8 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { useSessionStore } from '@/stores/session';
 
 const HomeView = () => import('@/pages/HomeView.vue');
-const UserLoginView = () => import('@/pages/UserLoginView.vue');
-const AdminLoginView = () => import('@/pages/AdminLoginView.vue');
+const LoginView = () => import('@/pages/LoginView.vue');
 const TopupView = () => import('@/pages/TopupView.vue');
 const PocketsView = () => import('@/pages/PocketsView.vue');
 const QrisView = () => import('@/pages/QrisView.vue');
@@ -19,9 +18,9 @@ export const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/', name: 'home', component: HomeView, meta: { title: 'Beranda' } },
-    { path: '/login', name: 'login', component: UserLoginView, meta: { title: 'Login Pengguna', standalone: true } },
+    { path: '/login', name: 'login', component: LoginView, meta: { title: 'Masuk SakuKilat', standalone: true } },
     { path: '/auth', redirect: '/login' },
-    { path: '/admin/login', name: 'admin-login', component: AdminLoginView, meta: { title: 'Login Admin Kepatuhan', standalone: true } },
+    { path: '/admin/login', redirect: '/login' },
     { path: '/topup', name: 'topup', component: TopupView, meta: { title: 'Top Up Saldo' } },
     { path: '/pockets', name: 'pockets', component: PocketsView, meta: { title: 'Kantong Pintar' } },
     { path: '/qris', name: 'qris', component: QrisView, meta: { title: 'Scan & Bayar QRIS' } },
@@ -44,8 +43,8 @@ router.beforeEach(async (to) => {
 
   document.title = to.meta.title ? `${to.meta.title} — SakuKilat` : 'SakuKilat';
 
-  if (to.name !== 'login' && to.name !== 'admin-login' && !store.user) {
-    return to.name === 'admin' ? { name: 'admin-login' } : { name: 'login' };
+  if (to.name !== 'login' && !store.user) {
+    return { name: 'login' };
   }
   return true;
 });

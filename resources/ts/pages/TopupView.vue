@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, shallowRef, watch } from 'vue';
+import FeatureDisabledNotice from '@/components/common/FeatureDisabledNotice.vue';
 import MoneyInput from '@/components/common/MoneyInput.vue';
 import { useSessionStore } from '@/stores/session';
 import type { TopupChannelConfig, TopupOrder, TransactionRecord } from '@/types/sakukilat';
@@ -79,6 +80,8 @@ async function simulateVaWebhook(externalRef: string): Promise<void> {
       <RouterLink to="/" class="sk-btn">Kembali</RouterLink>
     </div>
 
+    <FeatureDisabledNotice :enabled="store.canUse('allow_topup')" feature-name="Top Up Saldo" />
+
     <div
       v-if="store.user?.kyc_status !== 'VERIFIED'"
       class="mb-5 p-4 rounded-[14px] border border-[#f5d08a] bg-[var(--pill-warning-bg)] text-[var(--pill-warning-ink)] flex flex-wrap items-center justify-between gap-3"
@@ -153,7 +156,7 @@ async function simulateVaWebhook(externalRef: string): Promise<void> {
             {{ errorMsg }}
           </div>
 
-          <button type="submit" class="w-full sk-btn sk-btn-primary">
+          <button type="submit" :disabled="!store.canUse('allow_topup')" class="w-full sk-btn sk-btn-primary">
             Buat Nomor Virtual Account / Instruksi
           </button>
         </form>

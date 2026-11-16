@@ -15,7 +15,10 @@ use Illuminate\Support\Str;
 
 final class AuthService
 {
-    public function __construct(private readonly SecurityService $security) {}
+    public function __construct(
+        private readonly SecurityService $security,
+        private readonly AppConfigService $appConfig,
+    ) {}
 
     public function requestOtp(string $rawPhone, string $channel = 'WHATSAPP'): array
     {
@@ -205,19 +208,7 @@ final class AuthService
         return $user;
     }
 
-    public function loginWithPin(string $rawPhone, string $pin, ?string $deviceId = null): array
-    {
-        $phone = $this->security->normalizePhone($rawPhone);
-        $user = User::query()->where('phone_number', $phone)->first();
-
-        if (! $user || $user->account_status !== 'ACTIVE') {
-            throw new DomainException('INVALID_CREDENTIALS', 'Nomor HP atau PIN tidak sesuai.', 401);
-        }
-
-        return $this->verifyPinAndBindDevice($user, $pin, $deviceId);
-    }
-
-    public function loginAdminWithPin(string $identifier, string $pin, ?string $deviceId = null): array
+    public function loginWithPin(string $identifier, string $pin, ?string $deviceId = null): array
     {
         $clean = trim($identifier);
         $user = str_contains($clean, '@')
@@ -225,15 +216,7 @@ final class AuthService
             : User::query()->where('phone_number', $this->security->normalizePhone($clean))->first();
 
         if (! $user || $user->account_status !== 'ACTIVE') {
-            throw new DomainException('INVALID_CREDENTIALS', 'Kredensial admin atau PIN tidak sesuai.', 401);
-        }
-
-        if ($user->role !== 'ADMIN') {
-            throw new DomainException(
-                'ADMIN_ACCESS_REQUIRED',
-                'Akun ini bukan administrator kepatuhan. Silakan gunakan halaman login pengguna.',
-                403
-            );
+            throw new DomainException('INVALID_CREDENTIALS', 'Email / Nomor HP atau PIN tidak sesuai.', 401);
         }
 
         return $this->verifyPinAndBindDevice($user, $pin, $deviceId);
@@ -338,6 +321,8 @@ final class AuthService
 
     public function submitKyc(User $user, array $data): KycDocument
     {
+        $this->appConfig->ensureEnabled('allow_kyc_submission', 'Pengajuan KYC e-KTP');
+
         $nikEncrypted = $this->security->encryptNik($data['nik']);
         $nikHash = $this->security->hashNik($data['nik']);
 

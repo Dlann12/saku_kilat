@@ -203,6 +203,30 @@ export interface MerchantDashboard {
   settlements: TransactionRecord[];
 }
 
+export interface AppPermissions {
+  allow_topup: boolean;
+  allow_qris: boolean;
+  allow_p2p_transfer: boolean;
+  allow_bank_transfer: boolean;
+  allow_ppob: boolean;
+  allow_split_bill: boolean;
+  allow_pockets: boolean;
+  allow_kyc_submission: boolean;
+}
+
+export interface AppLimits {
+  unverified_balance_limit: number;
+  verified_balance_limit: number;
+  bifast_monthly_free_quota: number;
+  bifast_fee_after_quota: number;
+}
+
+export interface AppConfig {
+  permissions: AppPermissions;
+  limits: AppLimits;
+  updated_at?: string | null;
+}
+
 export interface AdminOverview {
   ledger_invariant: {
     balanced: boolean;
@@ -236,5 +260,6 @@ export interface AdminOverview {
     wallet?: { id: string; name: string } | null;
   }>;
   recent_transactions: Array<TransactionRecord & { user?: { id: string; full_name: string } | null }>;
+  app_config?: AppConfig;
 }
 

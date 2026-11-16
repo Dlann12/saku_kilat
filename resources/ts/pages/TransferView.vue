@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, shallowRef, watch } from 'vue';
 import { useRoute } from 'vue-router';
+import FeatureDisabledNotice from '@/components/common/FeatureDisabledNotice.vue';
 import MoneyInput from '@/components/common/MoneyInput.vue';
 import { useSessionStore } from '@/stores/session';
 import type { TransactionRecord } from '@/types/sakukilat';
@@ -22,7 +23,9 @@ const usableWallets = computed(() =>
 const bifast = computed(
   () => store.walletSummary?.bifast_quota ?? { used_this_month: 0, free_quota: 10, remaining_free: 10 }
 );
-const bankFee = computed(() => (bifast.value.remaining_free > 0 ? 0 : 2500));
+const bankFee = computed(() =>
+  bifast.value.remaining_free > 0 ? 0 : (store.appConfig.limits.bifast_fee_after_quota ?? 2500)
+);
 
 const p2pForm = reactive({
   phone: typeof route.query.phone === 'string' && route.query.phone ? route.query.phone : '+6281234567890',
@@ -165,6 +168,7 @@ function submitBank(): void {
         </div>
 
         <form v-if="tab === 'p2p'" class="space-y-4" @submit.prevent="submitP2p">
+          <FeatureDisabledNotice :enabled="store.canUse('allow_p2p_transfer')" feature-name="Transfer Sesama SakuKilat (P2P)" />
           <div v-if="quickContacts.length">
             <p class="text-xs font-medium text-[var(--muted)] mb-2">Kontak Cepat Terdaftar</p>
             <div class="flex flex-wrap gap-2">
@@ -213,10 +217,13 @@ function submitBank(): void {
             <input id="p2p-notes" v-model="p2pForm.notes" type="text" placeholder="Bayar makan siang / iuran" class="sk-input text-sm" />
           </div>
 
-          <button type="submit" class="w-full sk-btn sk-btn-primary">Kirim Saldo Sekarang (PIN)</button>
+          <button type="submit" :disabled="!store.canUse('allow_p2p_transfer')" class="w-full sk-btn sk-btn-primary">
+            Kirim Saldo Sekarang (PIN)
+          </button>
         </form>
 
         <div v-else class="space-y-4">
+          <FeatureDisabledNotice :enabled="store.canUse('allow_bank_transfer')" feature-name="Transfer Rekening Bank (BI-FAST)" />
           <div
             v-if="store.user?.kyc_status !== 'VERIFIED'"
             class="p-4 rounded-[12px] border border-[#f5d08a] bg-[var(--pill-warning-bg)] text-[var(--pill-warning-ink)] space-y-2"
@@ -285,7 +292,7 @@ function submitBank(): void {
 
             <button
               type="submit"
-              :disabled="store.user?.kyc_status !== 'VERIFIED'"
+              :disabled="!store.canUse('allow_bank_transfer') || store.user?.kyc_status !== 'VERIFIED'"
               class="w-full sk-btn sk-btn-primary"
             >
               Transfer ke Rekening Bank (PIN)

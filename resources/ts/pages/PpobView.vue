@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, shallowRef, watch } from 'vue';
 import { useRoute } from 'vue-router';
+import FeatureDisabledNotice from '@/components/common/FeatureDisabledNotice.vue';
 import { useSessionStore } from '@/stores/session';
 import type { PpobInquiry, PpobProduct, TransactionRecord } from '@/types/sakukilat';
 import { apiFetch, makeIdempotencyKey } from '@/utils/api';
@@ -121,6 +122,8 @@ function submitOrder(): void {
       <RouterLink to="/" class="sk-btn">Kembali</RouterLink>
     </div>
 
+    <FeatureDisabledNotice :enabled="store.canUse('allow_ppob')" feature-name="Pembelian & Tagihan PPOB" />
+
     <div class="flex flex-wrap gap-2 mb-5">
       <button
         v-for="cat in categories"
@@ -214,7 +217,9 @@ function submitOrder(): void {
             </select>
           </div>
 
-          <button type="submit" class="w-full sk-btn sk-btn-primary">Bayar &amp; Terbitkan Resi (PIN)</button>
+          <button type="submit" :disabled="!store.canUse('allow_ppob')" class="w-full sk-btn sk-btn-primary">
+            Bayar &amp; Terbitkan Resi (PIN)
+          </button>
         </form>
       </aside>
     </div>

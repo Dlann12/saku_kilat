@@ -2,6 +2,7 @@
 import jsQR from 'jsqr';
 import { computed, onUnmounted, ref, shallowRef, useTemplateRef, watch } from 'vue';
 import AppIcon from '@/components/common/AppIcon.vue';
+import FeatureDisabledNotice from '@/components/common/FeatureDisabledNotice.vue';
 import MoneyInput from '@/components/common/MoneyInput.vue';
 import QrCodeBox from '@/components/common/QrCodeBox.vue';
 import { useSessionStore } from '@/stores/session';
@@ -187,6 +188,8 @@ function submitPayment(): void {
       <RouterLink to="/" class="sk-btn">Kembali</RouterLink>
     </div>
 
+    <FeatureDisabledNotice :enabled="store.canUse('allow_qris')" feature-name="Pembayaran QRIS" />
+
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
       <section class="sk-card lg:col-span-6 space-y-5">
         <div>
@@ -346,7 +349,12 @@ function submitPayment(): void {
             <span class="text-lg font-semibold text-[var(--accent)] num">{{ formatRupiah(amount) }}</span>
           </div>
 
-          <button id="qris-pay-btn" type="submit" :disabled="Boolean(walletWarning)" class="w-full sk-btn sk-btn-primary">
+          <button
+            id="qris-pay-btn"
+            type="submit"
+            :disabled="!store.canUse('allow_qris') || Boolean(walletWarning)"
+            class="w-full sk-btn sk-btn-primary"
+          >
             Bayar Sekarang (Konfirmasi PIN)
           </button>
         </form>

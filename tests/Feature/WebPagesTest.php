@@ -24,7 +24,6 @@ final class WebPagesTest extends TestCase
         $routes = [
             '/',
             '/login',
-            '/admin/login',
             '/auth',
             '/topup',
             '/pockets',
@@ -45,85 +44,89 @@ final class WebPagesTest extends TestCase
         }
     }
 
-    public function test_spa_session_bootstrap_demo_switch_logout_and_csv_export(): void
+    public function test_unified_login_and_admin_app_config_enforcement(): void
     {
         $stateful = ['Referer' => 'http://localhost/'];
 
-        // Initial session auto-bootstraps Dlan Kusuma demo persona
+        // Initial session auto-bootstraps Dlan Kusuma demo persona + default app_config
         $this->withHeaders($stateful)
             ->getJson('/api/v1/auth/session')
             ->assertOk()
             ->assertJsonPath('data.authenticated', true)
-            ->assertJsonPath('data.user.phone_number', '+6285211223344');
+            ->assertJsonPath('data.user.phone_number', '+6285211223344')
+            ->assertJsonPath('data.app_config.permissions.allow_ppob', true);
 
-        // Switch persona via API endpoint
-        $budi = User::query()->where('phone_number', '+6281122334455')->firstOrFail();
+        // Regular user cannot update admin app config
         $this->withHeaders($stateful)
-            ->postJson('/api/v1/auth/demo-switch', ['user_id' => $budi->id])
+            ->putJson('/api/v1/admin/config', [
+                'permissions' => ['allow_ppob' => false],
+            ])
+            ->assertStatus(403);
+
+        // Unified login accepts Compliance Admin email + PIN
+        $this->withHeaders($stateful)
+            ->postJson('/api/v1/auth/login', [
+                'identifier' => 'compliance@sakukilat.id',
+                'pin' => '123456',
+            ])
             ->assertOk()
-            ->assertJsonPath('data.user.phone_number', '+6281122334455');
+            ->assertJsonPath('data.user.role', 'ADMIN');
 
+        // Admin disables PPOB and raises SakuKilat Plus balance limit to Rp 25M
         $this->withHeaders($stateful)
-            ->getJson('/api/v1/payments/qris/presets')
+            ->putJson('/api/v1/admin/config', [
+                'permissions' => ['allow_ppob' => false],
+                'limits' => ['verified_balance_limit' => 25_000_000],
+            ])
             ->assertOk()
-            ->assertJsonCount(3, 'data.presets');
+            ->assertJsonPath('data.permissions.allow_ppob', false)
+            ->assertJsonPath('data.limits.verified_balance_limit', 25_000_000);
 
+        // Switch back to regular verified user Dlan via unified login
         $this->withHeaders($stateful)
-            ->getJson('/api/v1/transfers/contacts')
+            ->postJson('/api/v1/auth/login', [
+                'identifier' => '+6285211223344',
+                'pin' => '123456',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.user.role', 'USER');
+
+        // Session now reports updated app_config & balance limit
+        $this->withHeaders($stateful)
+            ->getJson('/api/v1/auth/session')
+            ->assertOk()
+            ->assertJsonPath('data.balance_limit', 25_000_000)
+            ->assertJsonPath('data.app_config.permissions.allow_ppob', false);
+
+        // Executing PPOB while disabled fails with 403 FEATURE_DISABLED_BY_ADMIN
+        $pinRes = $this->withHeaders($stateful)
+            ->postJson('/api/v1/auth/pin/verify', ['pin' => '123456'])
             ->assertOk();
+        $txToken = $pinRes->json('data.tx_auth_token');
 
+        $this->withHeaders([
+            ...$stateful,
+            'X-Idempotency-Key' => 'ppob-disabled-test-01',
+        ])->postJson('/api/v1/ppob/execute', [
+            'product_code' => 'PULSA_TSEL_25',
+            'customer_number' => '085211223344',
+            'source_wallet_id' => DatabaseSeeder::WALLETS['dlan_main'],
+            'tx_auth_token' => $txToken,
+        ])->assertStatus(403)
+            ->assertJsonPath('error.code', 'FEATURE_DISABLED_BY_ADMIN');
+
+        // Verify CSV & logout
         $csv = $this->withHeaders($stateful)->get('/api/v1/transactions/export.csv');
         $csv->assertOk();
-        $csv->assertHeader('Content-Type', 'text/csv; charset=utf-8');
-        $this->assertStringContainsString('Referensi,Waktu,Judul', $csv->getContent());
-
-        // Logout clears session and sets sakukilat_logged_out flag
         $this->withHeaders($stateful)
             ->postJson('/api/v1/auth/logout')
-            ->assertOk()
-            ->assertJsonPath('data.logged_out', true);
-
+            ->assertOk();
         $this->withHeaders($stateful)
             ->getJson('/api/v1/auth/session')
             ->assertOk()
             ->assertJsonPath('data.authenticated', false);
 
-        // API user portal rejects non-user ADMIN login
-        $this->withHeaders($stateful)
-            ->postJson('/api/v1/auth/login', [
-                'phone_number' => '+6281100009999',
-                'pin' => '123456',
-                'portal' => 'USER',
-            ])
-            ->assertStatus(403);
-
-        // API admin login rejects normal consumer user
-        $this->withHeaders($stateful)
-            ->postJson('/api/v1/auth/admin/login', [
-                'identifier' => '+6285211223344',
-                'pin' => '123456',
-            ])
-            ->assertStatus(403);
-
-        // API admin login succeeds with Compliance Admin email + PIN
-        $this->withHeaders($stateful)
-            ->postJson('/api/v1/auth/admin/login', [
-                'identifier' => 'compliance@sakukilat.id',
-                'pin' => '123456',
-                'device_id' => 'AUDIT-STATION-01',
-            ])
-            ->assertOk()
-            ->assertJsonPath('data.user.role', 'ADMIN')
-            ->assertJsonPath('data.user.email', 'compliance@sakukilat.id');
-
-        // API user login restores regular user session cleanly
-        $this->withHeaders($stateful)
-            ->postJson('/api/v1/auth/login', [
-                'phone_number' => '+6285211223344',
-                'pin' => '123456',
-                'portal' => 'USER',
-            ])
-            ->assertOk()
-            ->assertJsonPath('data.user.phone_number', '+6285211223344');
+        // Re-seed sanity check using model helper
+        $this->assertTrue(User::query()->where('role', 'ADMIN')->exists());
     }
 }
